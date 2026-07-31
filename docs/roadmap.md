@@ -6,14 +6,14 @@ accessibility approach, and the testing foundation — proven end to end by a sm
 reference simulation (`/demo`), but no graded module content. Each module below ships in its own
 pull request, after the foundation is approved.
 
-| Order | Module | Slug | Course week |
-| --- | --- | --- | --- |
-| 1 | System-Call Contracts | `system-call-contracts` | Week 1 |
-| 2 | Scheduling and Concurrency | `scheduling-and-concurrency` | Week 2 |
-| 3 | Virtual Memory | `virtual-memory` | Week 3 |
-| 4 | Crash Consistency | `crash-consistency` | Week 4 |
-| 5 | Virtualization and Isolation | `virtualization-and-isolation` | Week 5 |
-| 6 | Integrated Operating-System Failure Analysis | `integrated-failure-analysis` | Week 6 |
+| Order | Module | Slug | Course week | Status |
+| --- | --- | --- | --- | --- |
+| 1 | System-Call Contracts | `system-call-contracts` | Week 1 | Available |
+| 2 | Scheduling and Concurrency | `scheduling-and-concurrency` | Week 2 | Planned |
+| 3 | Virtual Memory | `virtual-memory` | Week 3 | Planned |
+| 4 | Crash Consistency | `crash-consistency` | Week 4 | Planned |
+| 5 | Virtualization and Isolation | `virtualization-and-isolation` | Week 5 | Planned |
+| 6 | Integrated Operating-System Failure Analysis | `integrated-failure-analysis` | Week 6 | Planned |
 
 Module metadata (title, summary, learning goals, status) lives in `src/lib/sim/modules.ts` — update
 a module's `status` from `"planned"` to `"available"` as part of the PR that ships it.
