@@ -12,6 +12,14 @@ export const TraceEventSchema = z.object({
   label: z.string(),
   detail: z.string().optional(),
   timestamp: z.number().nonnegative(),
+  /**
+   * Optional structured extras a module attaches beyond the generic
+   * label/detail/timestamp fields (e.g. a syscall's category, arguments,
+   * return value, errno, and PID). Additive and optional, so it never
+   * requires a schemaVersion bump: older records without `meta` still
+   * parse, and export code that doesn't know about it just ignores it.
+   */
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const RunResultSchema = z.object({

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MODULES, getModule } from "@/lib/sim/modules";
+import { MODULE_CLIENTS } from "@/components/modules/registry";
 import { StatusBadge } from "@/components/status-badge";
 
 export function generateStaticParams() {
@@ -15,6 +16,9 @@ export default async function ModulePage({
   const { slug } = await params;
   const moduleSummary = getModule(slug);
   if (!moduleSummary) notFound();
+
+  const ModuleClient = MODULE_CLIENTS[slug];
+  if (ModuleClient) return <ModuleClient />;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">

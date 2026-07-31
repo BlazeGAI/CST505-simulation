@@ -10,8 +10,8 @@ test("home page lists all six modules and links to the foundation demo", async (
 });
 
 test("a module placeholder page explains that its simulation ships in a follow-up PR", async ({ page }) => {
-  await page.goto("/modules/system-call-contracts");
-  await expect(page.getByRole("heading", { name: "System-Call Contracts" })).toBeVisible();
+  await page.goto("/modules/scheduling-and-concurrency");
+  await expect(page.getByRole("heading", { name: "Scheduling and Concurrency" })).toBeVisible();
   await expect(page.getByText(/follow-up pull request/)).toBeVisible();
 });
 

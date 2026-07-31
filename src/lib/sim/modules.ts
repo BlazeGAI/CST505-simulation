@@ -30,7 +30,7 @@ export const MODULES: ModuleSummary[] = [
       "Compare operating-system structural models against scenario constraints for performance, reliability, and isolation.",
       "Construct a system-context model that translates stakeholder needs into measurable operating-system design criteria.",
     ],
-    status: "planned",
+    status: "available",
   },
   {
     slug: "scheduling-and-concurrency",
