@@ -1,0 +1,47 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { EvidenceRecordForm } from "./evidence-record-form";
+import { createEmptyEvidenceRecord } from "@/lib/schemas/evidence-record";
+
+describe("EvidenceRecordForm", () => {
+  it("renders a labeled control for every required field", () => {
+    const value = createEmptyEvidenceRecord({
+      moduleId: "reference-demo",
+      scenarioId: "reference-demo-normal",
+      seed: 42,
+    });
+    render(<EvidenceRecordForm value={value} onChange={() => {}} />);
+
+    for (const label of [
+      "Prepared by",
+      "Model and assumptions",
+      "Prediction",
+      "Parameters tested",
+      "Observed results",
+      "Cited interpretation",
+      "Architecture implication",
+      "Counterexample or complication",
+      "Limitation",
+    ]) {
+      expect(screen.getByLabelText(new RegExp(label))).toBeInTheDocument();
+    }
+  });
+
+  it("calls onChange with the updated field and a fresh timestamp", () => {
+    const value = createEmptyEvidenceRecord({
+      moduleId: "reference-demo",
+      scenarioId: "reference-demo-normal",
+      seed: 42,
+    });
+    const onChange = vi.fn();
+    render(<EvidenceRecordForm value={value} onChange={onChange} />);
+
+    const prediction = screen.getByLabelText("Prediction");
+    fireEvent.change(prediction, { target: { value: "x" } });
+
+    expect(onChange).toHaveBeenCalled();
+    const lastCall = onChange.mock.calls.at(-1)?.[0];
+    expect(lastCall.prediction).toBe("x");
+    expect(lastCall.updatedAt).not.toBe(value.updatedAt);
+  });
+});
