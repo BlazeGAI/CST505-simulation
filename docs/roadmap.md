@@ -9,7 +9,7 @@ pull request, after the foundation is approved.
 | Order | Module | Slug | Course week | Status |
 | --- | --- | --- | --- | --- |
 | 1 | System-Call Contracts | `system-call-contracts` | Week 1 | Available |
-| 2 | Scheduling and Concurrency | `scheduling-and-concurrency` | Week 2 | Planned |
+| 2 | Scheduling and Concurrency | `scheduling-and-concurrency` | Week 2 | Available |
 | 3 | Virtual Memory | `virtual-memory` | Week 3 | Planned |
 | 4 | Crash Consistency | `crash-consistency` | Week 4 | Planned |
 | 5 | Virtualization and Isolation | `virtualization-and-isolation` | Week 5 | Planned |

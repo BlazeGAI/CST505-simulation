@@ -44,7 +44,7 @@ export const MODULES: ModuleSummary[] = [
       "Diagnose race conditions and deadlocks from execution traces and resource-allocation graphs.",
       "Design a synchronization strategy that balances correctness, responsiveness, and overhead.",
     ],
-    status: "planned",
+    status: "available",
   },
   {
     slug: "virtual-memory",
