@@ -70,4 +70,31 @@ test.describe("Scheduling and Concurrency module", () => {
     expect(moduleIds).toContain("scheduling-policy");
     expect(moduleIds).toContain("ring-buffer");
   });
+
+  test("a run's trace stays visible when printing even if its <details> disclosure was never opened (regression)", async ({
+    page,
+  }) => {
+    await page.goto("/modules/scheduling-and-concurrency");
+    await page
+      .locator("form")
+      .filter({ has: page.getByLabel("Policy") })
+      .getByRole("button", { name: "Run simulation" })
+      .click();
+
+    const run = page.locator("details", { hasText: "Queue-state log for run #1" });
+    await expect(run.locator("summary")).toBeVisible(); // never clicked open
+
+    await page.emulateMedia({ media: "print" });
+    // Playwright's own visibility checks (toBeVisible/getByRole) treat any
+    // content inside a closed <details> as unconditionally hidden, regardless
+    // of computed CSS - that's a deliberate Playwright testing heuristic, not
+    // a reflection of what the browser actually renders when printing. Ask
+    // the browser directly via checkVisibility(), which is what determines
+    // whether this table is actually painted on the printed page.
+    const tableRendersWhenPrinted = await run.evaluate((details) => {
+      const table = details.querySelector("table");
+      return table !== null && table.checkVisibility();
+    });
+    expect(tableRendersWhenPrinted).toBe(true);
+  });
 });
