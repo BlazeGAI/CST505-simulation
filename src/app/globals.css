@@ -38,3 +38,19 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+@media print {
+  /* Every module collapses its per-run trace into <details>/<summary> so
+     the page stays scannable on screen. Chromium hides a closed <details>'s
+     content through an internal ::details-content pseudo-element set to
+     content-visibility: hidden - overriding display on the actual children
+     (the old form of this rule) has no effect, since that pseudo-element
+     sits between <details> and its children and still suppresses them.
+     Without overriding the pseudo-element itself, a run's evidence silently
+     vanishes from the printed report unless a student happened to click
+     every disclosure open first. */
+  details:not([open])::details-content {
+    content-visibility: visible !important;
+    display: block !important;
+  }
+}

@@ -72,7 +72,7 @@ export const MODULES: ModuleSummary[] = [
       "Analyze I/O behavior using workload traces and benchmark evidence.",
       "Design a persistence and recovery policy for a constrained edge workload.",
     ],
-    status: "planned",
+    status: "available",
   },
   {
     slug: "virtualization-and-isolation",

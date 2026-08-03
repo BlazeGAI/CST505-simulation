@@ -170,16 +170,16 @@ export function SchedulingAndConcurrencyClient() {
         </p>
       </section>
 
-      <section className="print:hidden mt-8" aria-labelledby="scheduling-heading">
+      <section className="mt-8" aria-labelledby="scheduling-heading">
         <h2 id="scheduling-heading" className="text-lg font-semibold">
           2. Scheduling policy comparison
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
           Seed <strong>{SCHEDULING_SEED}</strong> and the workload are fixed &mdash; only the policy
           and time quantum change between runs.
         </p>
         <form
-          className="mt-3 flex flex-wrap items-end gap-4"
+          className="print:hidden mt-3 flex flex-wrap items-end gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleRunPolicy();
@@ -284,17 +284,17 @@ export function SchedulingAndConcurrencyClient() {
         ))}
       </section>
 
-      <section className="print:hidden mt-8" aria-labelledby="ring-buffer-heading">
+      <section className="mt-8" aria-labelledby="ring-buffer-heading">
         <h2 id="ring-buffer-heading" className="text-lg font-semibold">
           3. Shared ring-buffer interleaving
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
           Seed <strong>{RING_BUFFER_SEED}</strong>. The safety-alert thread (A) and the
           sensor-ingestion thread (B) both append to one shared buffer using the same fixed,
           controlled interleaving &mdash; only the synchronization mechanism changes.
         </p>
         <form
-          className="mt-3 flex flex-wrap items-end gap-4"
+          className="print:hidden mt-3 flex flex-wrap items-end gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleRunRingBuffer();

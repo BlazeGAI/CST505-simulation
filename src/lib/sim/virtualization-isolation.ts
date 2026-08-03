@@ -133,11 +133,14 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
   let totalCpuDeficit = 0;
   let primaryAllocatedSum = 0;
   let noisyAllocatedSum = 0;
+  let downAfterFault = false;
 
   for (let tick = 0; tick < TOTAL_TICKS; tick++) {
     const primaryDemand = primaryDemandAt(rng);
     const noisyDemand = noisyDemandAt(tick, rng);
-    const { primaryAllocated, noisyAllocated } = allocate(profile, primaryDemand, noisyDemand);
+    const { primaryAllocated, noisyAllocated } = downAfterFault
+      ? { primaryAllocated: 0, noisyAllocated: 0 }
+      : allocate(profile, primaryDemand, noisyDemand);
     const deficit = Math.max(0, primaryDemand - primaryAllocated);
     if (deficit > 0) cpuStarvationTicks += 1;
     totalCpuDeficit += deficit;
@@ -163,9 +166,11 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
     trace.push({
       index: trace.length,
       label: `tick:${tick}`,
-      detail: `primary demands ${primaryDemand}%, gets ${primaryAllocated.toFixed(1)}%; noisy demands ${noisyDemand}%, gets ${noisyAllocated.toFixed(1)}%${
-        deficit > 0 ? ` — primary starved by ${deficit.toFixed(1)}%` : ""
-      }`,
+      detail: downAfterFault
+        ? `both tenants are down after the uncontained kernel fault at tick ${FAULT_TICK} — primary demanded ${primaryDemand}% but got 0%.`
+        : `primary demands ${primaryDemand}%, gets ${primaryAllocated.toFixed(1)}%; noisy demands ${noisyDemand}%, gets ${noisyAllocated.toFixed(1)}%${
+            deficit > 0 ? ` — primary starved by ${deficit.toFixed(1)}%` : ""
+          }`,
       timestamp: tick,
       meta: {
         event: "tick",
@@ -174,6 +179,7 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
         noisyDemand,
         noisyAllocated: Number(noisyAllocated.toFixed(1)),
         starved: deficit > 0,
+        downAfterFault,
       },
     });
 
@@ -184,10 +190,11 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
         label: "noisy:kernel-fault",
         detail: contained
           ? "the noisy tenant triggers a kernel-level fault; the hypervisor boundary contains it — the primary tenant is unaffected."
-          : "the noisy tenant triggers a kernel-level fault; because this boundary shares one kernel with the primary tenant, the fault reaches it too.",
+          : "the noisy tenant triggers a kernel-level fault; because this boundary shares one kernel with the primary tenant, the fault reaches it too — both tenants go down for the rest of this run.",
         timestamp: tick,
         meta: { event: "kernel-fault", contained },
       });
+      if (!contained) downAfterFault = true;
     }
   }
 

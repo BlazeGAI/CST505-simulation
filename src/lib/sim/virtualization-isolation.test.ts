@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runSimulation } from "./engine";
-import { virtualizationIsolationModule, ASSESSED_SEED, type BoundaryType } from "./virtualization-isolation";
+import { virtualizationIsolationModule, ASSESSED_SEED, FAULT_TICK, type BoundaryType } from "./virtualization-isolation";
 
 function run(boundary: BoundaryType) {
   return runSimulation(virtualizationIsolationModule, { boundary }, ASSESSED_SEED);
@@ -10,15 +10,42 @@ describe("virtualizationIsolationModule golden seed (assessed seed 100)", () => 
   it("neither process nor an unbounded container caps the noisy tenant's CPU share", () => {
     const process = run("process");
     const containerUnbounded = run("container-unbounded");
-    expect(process.metrics).toMatchObject({ cpuStarvationTicks: 6, totalCpuDeficit: 18 });
-    expect(containerUnbounded.metrics).toMatchObject({ cpuStarvationTicks: 6, totalCpuDeficit: 18 });
+    expect(process.metrics).toMatchObject({ cpuStarvationTicks: 10, totalCpuDeficit: 161 });
+    expect(containerUnbounded.metrics).toMatchObject({ cpuStarvationTicks: 10, totalCpuDeficit: 161 });
   });
 
-  it("a cgroup CPU cap and a VM's fixed partition both eliminate primary starvation", () => {
+  it("a cgroup CPU cap eliminates burst-driven starvation, but not the shared-kernel fault's downtime", () => {
     const containerLimited = run("container-limited");
+    expect(containerLimited.metrics).toMatchObject({ cpuStarvationTicks: 4, totalCpuDeficit: 143 });
+  });
+
+  it("only the VM boundary has zero starvation, because it also contains the fault that causes it elsewhere", () => {
     const vm = run("vm");
-    expect(containerLimited.metrics).toMatchObject({ cpuStarvationTicks: 0, totalCpuDeficit: 0 });
     expect(vm.metrics).toMatchObject({ cpuStarvationTicks: 0, totalCpuDeficit: 0 });
+  });
+
+  it("every shared-kernel boundary goes fully idle for the remaining ticks after the uncontained fault", () => {
+    for (const boundaryType of ["process", "container-unbounded", "container-limited"] as const) {
+      const result = run(boundaryType);
+      const postFaultTicks = result.trace.filter(
+        (e) => e.meta?.event === "tick" && e.timestamp > FAULT_TICK,
+      );
+      expect(postFaultTicks.length).toBeGreaterThan(0);
+      for (const tick of postFaultTicks) {
+        expect(tick.meta?.primaryAllocated).toBe(0);
+        expect(tick.meta?.noisyAllocated).toBe(0);
+        expect(tick.meta?.downAfterFault).toBe(true);
+      }
+    }
+  });
+
+  it("the VM boundary keeps allocating normally after its contained fault", () => {
+    const vm = run("vm");
+    const postFaultTicks = vm.trace.filter((e) => e.meta?.event === "tick" && e.timestamp > FAULT_TICK);
+    expect(postFaultTicks.length).toBeGreaterThan(0);
+    for (const tick of postFaultTicks) {
+      expect(tick.meta?.downAfterFault).toBe(false);
+    }
   });
 
   it("only the VM boundary contains the noisy tenant's kernel-level fault — every shared-kernel boundary does not", () => {
