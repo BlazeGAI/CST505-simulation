@@ -32,7 +32,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-indigo-700 focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-indigo-700 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
         >
           Skip to main content
         </a>
@@ -40,11 +40,14 @@ export default function RootLayout({
         <main id="main-content" className="flex-1">
           {children}
         </main>
-        <footer className="print:hidden border-t border-slate-200 dark:border-slate-800 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
-          <div className="mx-auto max-w-5xl">
-            CST505 Simulation Suite &mdash; instructional models, not live operating-system,
-            container, or virtual-machine environments. No accounts. No data leaves your browser
-            unless you export it.
+        <footer className="print:hidden border-t border-slate-200 dark:border-slate-800">
+          <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:text-slate-400">
+            <p>
+              <span className="font-medium text-slate-700 dark:text-slate-300">CST505 Simulation Suite</span>
+              <span aria-hidden="true"> &middot; </span>
+              Instructional models, not live operating-system, container, or virtual-machine environments.
+            </p>
+            <p className="text-slate-500 dark:text-slate-400">No accounts. Nothing leaves your browser unless you export it.</p>
           </div>
         </footer>
       </body>
