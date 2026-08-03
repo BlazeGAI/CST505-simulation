@@ -9,12 +9,6 @@ test("home page lists all six modules and links to the foundation demo", async (
   await expect(page).toHaveURL(/\/demo$/);
 });
 
-test("a module placeholder page explains that its simulation ships in a follow-up PR", async ({ page }) => {
-  await page.goto("/modules/integrated-failure-analysis");
-  await expect(page.getByRole("heading", { name: "Integrated Operating-System Failure Analysis" })).toBeVisible();
-  await expect(page.getByText(/follow-up pull request/)).toBeVisible();
-});
-
 test("end-to-end evidence workflow: configure, run, compare, record evidence, export JSON", async ({
   page,
 }) => {

@@ -10,6 +10,7 @@ const PAGES = [
   "/modules/virtual-memory",
   "/modules/crash-consistency",
   "/modules/virtualization-and-isolation",
+  "/modules/integrated-failure-analysis",
 ];
 
 for (const path of PAGES) {
@@ -64,6 +65,19 @@ test("the Virtual Memory page's run workflow is reachable by keyboard alone", as
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
   await page.keyboard.press("Enter");
   const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
+  await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
+});
+
+test("the Integrated Failure Analysis page's run workflow is reachable by keyboard alone", async ({ page }) => {
+  await page.goto("/modules/integrated-failure-analysis");
+  await page.getByLabel("Scheduling policy").focus();
+  await page.keyboard.press("Tab"); // Durability policy
+  await page.keyboard.press("Tab"); // Isolation boundary
+  await page.keyboard.press("Tab"); // Memory control checkbox
+  await page.keyboard.press("Tab"); // Run simulation button
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  const resultsTable = page.getByRole("region", { name: "3. Compare results" }).getByRole("table");
   await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
 });
 
