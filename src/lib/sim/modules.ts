@@ -58,7 +58,7 @@ export const MODULES: ModuleSummary[] = [
       "Diagnose thrashing, fragmentation, and out-of-memory risk from simulated workload data.",
       "Recommend memory controls aligned to workload priorities and service constraints.",
     ],
-    status: "planned",
+    status: "available",
   },
   {
     slug: "crash-consistency",

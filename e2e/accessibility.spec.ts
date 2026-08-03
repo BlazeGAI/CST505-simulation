@@ -52,3 +52,15 @@ test("the Scheduling and Concurrency page's scheduling run workflow is reachable
   await page.keyboard.press("Enter");
   await expect(page.getByRole("table").first().locator("tbody tr")).toHaveCount(1);
 });
+
+test("the Virtual Memory page's run workflow is reachable by keyboard alone", async ({ page }) => {
+  await page.goto("/modules/virtual-memory");
+  await page.getByLabel("Policy", { exact: true }).focus();
+  await page.keyboard.press("Tab"); // Frames
+  await page.keyboard.press("Tab"); // Isolate-analytics checkbox
+  await page.keyboard.press("Tab"); // Run simulation button
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
+  await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
+});
