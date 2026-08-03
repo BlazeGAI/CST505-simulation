@@ -29,10 +29,19 @@ export const IO_BENCHMARK_DEFAULT_PARAMS: IoBenchmarkParams = { pattern: "sync-s
 /** Published seed every student's assessed comparison must use. */
 export const ASSESSED_SEED = 100;
 
-/** Documented, fixed test parameters per pattern - not seeded, so the setup itself is reproducible. */
-export const TEST_PARAMETERS: Record<IoPattern, { blockSizeKB: number; totalOps: number; queueDepth: number; fsyncEveryOp: boolean }> = {
-  "sync-small": { blockSizeKB: 4, totalOps: 500, queueDepth: 1, fsyncEveryOp: true },
-  "batch-sequential": { blockSizeKB: 4096, totalOps: 20, queueDepth: 4, fsyncEveryOp: false },
+/**
+ * Documented, fixed test parameters per pattern - not seeded, so the setup
+ * itself is reproducible. `flushIntervalOps` is the durability-relevant
+ * number: queue depth only bounds concurrent in-flight I/O, not how much
+ * previously "completed" (but unflushed) data can still be lost. Sync-small
+ * has no flush interval because every op is individually fsync'd.
+ */
+export const TEST_PARAMETERS: Record<
+  IoPattern,
+  { blockSizeKB: number; totalOps: number; queueDepth: number; fsyncEveryOp: boolean; flushIntervalOps: number | null }
+> = {
+  "sync-small": { blockSizeKB: 4, totalOps: 500, queueDepth: 1, fsyncEveryOp: true, flushIntervalOps: null },
+  "batch-sequential": { blockSizeKB: 4096, totalOps: 20, queueDepth: 4, fsyncEveryOp: false, flushIntervalOps: 4 },
 };
 
 function runIoBenchmark(params: IoBenchmarkParams, rng: SeededRandom): RunResult {
@@ -59,8 +68,9 @@ function runIoBenchmark(params: IoBenchmarkParams, rng: SeededRandom): RunResult
     iops = rng.int(30, 60);
     meanLatencyMs = Number(rng.float(0.3, 0.6).toFixed(2));
     p95Multiplier = rng.float(1.5, 2.0);
-    // Writes return once buffered; a whole batch can be lost if a crash lands before the periodic flush.
-    atRiskBytes = testParams.blockSizeKB * 1024 * testParams.queueDepth;
+    // Writes return once buffered, not once durable; everything issued since
+    // the last periodic flush is still at risk if a crash lands first.
+    atRiskBytes = testParams.blockSizeKB * 1024 * (testParams.flushIntervalOps ?? testParams.totalOps);
   }
 
   const bandwidthMBps = Number(((iops * testParams.blockSizeKB) / 1024).toFixed(2));
@@ -88,6 +98,7 @@ function runIoBenchmark(params: IoBenchmarkParams, rng: SeededRandom): RunResult
     totalOps: testParams.totalOps,
     queueDepth: testParams.queueDepth,
     fsyncEveryOp: testParams.fsyncEveryOp ? 1 : 0,
+    flushIntervalOps: testParams.flushIntervalOps ?? 0,
   };
 
   return {

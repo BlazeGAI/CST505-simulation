@@ -245,16 +245,16 @@ export function CrashConsistencyClient() {
         </div>
       </section>
 
-      <section className="print:hidden mt-8" aria-labelledby="configure-heading">
+      <section className="mt-8" aria-labelledby="configure-heading">
         <h2 id="configure-heading" className="text-lg font-semibold">
           3. Configure and run: crash point
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
           Seed <strong>{CRASH_SEED}</strong> and the write sequence are fixed. Run the three
           assigned points (after W3, W4, and W5) plus &ldquo;no crash&rdquo; for comparison.
         </p>
         <form
-          className="mt-3 flex flex-wrap items-end gap-4"
+          className="print:hidden mt-3 flex flex-wrap items-end gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleRunCrash();
@@ -347,16 +347,16 @@ export function CrashConsistencyClient() {
         ))}
       </section>
 
-      <section className="print:hidden mt-8" aria-labelledby="io-heading">
+      <section className="mt-8" aria-labelledby="io-heading">
         <h2 id="io-heading" className="text-lg font-semibold">
           4. Configure and run: I/O pattern
         </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
           Seed <strong>{IO_SEED}</strong>. Test parameters (block size, operation count, queue
           depth, fsync policy) are fixed per pattern and reported alongside the measured numbers.
         </p>
         <form
-          className="mt-3 flex flex-wrap items-end gap-4"
+          className="print:hidden mt-3 flex flex-wrap items-end gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleRunIo();

@@ -64,4 +64,22 @@ describe("crashConsistencyModule golden seed (assessed seed 100)", () => {
   it("is deterministic: identical crash point and seed produce identical results", () => {
     expect(run("w4")).toEqual(run("w4"));
   });
+
+  it("the crash event appears immediately after the last durable write, not after logging skipped writes (regression)", () => {
+    const result = run("w3");
+    const crashIndex = result.trace.findIndex((e) => e.label === "system:crash");
+    const lastDurableIndex = result.trace.findLastIndex((e) => e.meta?.applied === true && e.meta?.kind !== "system");
+    const firstSkippedIndex = result.trace.findIndex((e) => e.meta?.applied === false);
+    expect(crashIndex).toBe(lastDurableIndex + 1);
+    expect(firstSkippedIndex).toBeGreaterThan(crashIndex);
+  });
+
+  it("never advances the clock for writes that were never issued (regression)", () => {
+    const result = run("w3");
+    const crashEvent = result.trace.find((e) => e.label === "system:crash")!;
+    const skippedEvents = result.trace.filter((e) => e.meta?.applied === false);
+    for (const event of skippedEvents) {
+      expect(event.timestamp).toBe(crashEvent.timestamp);
+    }
+  });
 });

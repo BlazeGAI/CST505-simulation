@@ -255,18 +255,21 @@ function runCrashConsistency(params: CrashConsistencyParams, rng: SeededRandom):
   const stepsToApply = CRASH_AFTER_STEP[params.crashPoint];
   let clock = 0;
 
-  WRITE_SEQUENCE.forEach((step, index) => {
+  // Only the writes that actually land advance simulated time; the crash
+  // happens immediately after the last one, not after logging writes that
+  // never occurred.
+  for (let index = 0; index < stepsToApply; index++) {
+    const step = WRITE_SEQUENCE[index];
     clock += rng.int(1, 3);
-    const applied = index < stepsToApply;
-    if (applied) step.apply(disk);
+    step.apply(disk);
     trace.push({
       index: trace.length,
       label: `${step.kind}:${step.id}`,
-      detail: `${step.description}${applied ? "" : " -- CRASH: not durable"}`,
+      detail: step.description,
       timestamp: clock,
-      meta: { step: step.id, kind: step.kind, applied },
+      meta: { step: step.id, kind: step.kind, applied: true },
     });
-  });
+  }
 
   const crashed = params.crashPoint !== "none";
   if (crashed) {
@@ -278,6 +281,18 @@ function runCrashConsistency(params: CrashConsistencyParams, rng: SeededRandom):
       timestamp: clock,
       meta: { step: "crash", kind: "system", applied: true },
     });
+    // List the writes that were intended but never issued, without advancing
+    // the clock any further for events that never happened.
+    for (let index = stepsToApply; index < WRITE_SEQUENCE.length; index++) {
+      const step = WRITE_SEQUENCE[index];
+      trace.push({
+        index: trace.length,
+        label: `${step.kind}:${step.id}`,
+        detail: `${step.description} -- never issued: crash occurred first`,
+        timestamp: clock,
+        meta: { step: step.id, kind: step.kind, applied: false },
+      });
+    }
   }
 
   const { recovered, findings } = runFsck(disk);
