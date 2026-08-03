@@ -1,29 +1,25 @@
 import Link from "next/link";
 import { MODULES } from "@/lib/sim/modules";
 
-const NAV_LINKS = [
-  { href: "/", label: "Overview" },
-  ...MODULES.map((m) => ({ href: `/modules/${m.slug}`, label: m.title })),
-  { href: "/demo", label: "Foundation Demo" },
-  { href: "/docs", label: "Docs" },
-];
-
 export function SiteHeader() {
   return (
-    <header className="print:hidden border-b border-slate-200 dark:border-slate-800">
+    <header className="print:hidden sticky top-0 z-10 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-4 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          CST505 Simulation Suite
+        <Link href="/" className="flex items-baseline gap-2 rounded">
+          <span className="text-lg font-semibold tracking-tight">CST505</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">Simulation Suite</span>
         </Link>
-        <nav aria-label="Primary" className="ml-auto">
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
+        <nav aria-label="Modules" className="ml-auto">
+          <ul className="flex flex-wrap gap-1.5">
+            {MODULES.map((module) => (
+              <li key={module.slug}>
                 <Link
-                  href={link.href}
-                  className="rounded px-1 py-0.5 text-slate-600 hover:text-indigo-700 hover:underline dark:text-slate-300 dark:hover:text-indigo-400"
+                  href={`/modules/${module.slug}`}
+                  title={module.title}
+                  aria-label={`${module.weekLabel}: ${module.title}`}
+                  className="inline-flex h-8 items-center rounded-full border border-slate-200 px-3 text-xs font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
                 >
-                  {link.label}
+                  {module.weekLabel.replace("Week ", "W")}
                 </Link>
               </li>
             ))}
