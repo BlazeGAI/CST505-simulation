@@ -86,7 +86,7 @@ export const MODULES: ModuleSummary[] = [
       "Evaluate processor and memory constraints using cgroup and telemetry evidence.",
       "Analyze formal virtualization requirements, shared-kernel risks, and enforceable isolation controls.",
     ],
-    status: "planned",
+    status: "available",
   },
   {
     slug: "integrated-failure-analysis",
