@@ -131,14 +131,11 @@ function runIntegratedFailureAnalysis(params: IntegratedFailureAnalysisParams, r
   const trace: TraceEvent[] = [];
   let clock = 0;
   let firstFailedStageIndex = -1;
-  let stagesEvaluated = 0;
   let stagesHeld = 0;
   let stagesFailed = 0;
 
   for (let i = 0; i < STAGE_IDS.length; i++) {
     const stageId = STAGE_IDS[i];
-    clock += rng.int(2, 5);
-    stagesEvaluated += 1;
 
     if (firstFailedStageIndex !== -1) {
       trace.push({
@@ -150,6 +147,8 @@ function runIntegratedFailureAnalysis(params: IntegratedFailureAnalysisParams, r
       });
       continue;
     }
+
+    clock += rng.int(2, 5);
 
     const outcome = evaluateStage(stageId, params);
     if (outcome.constraintHeld) {
@@ -170,7 +169,6 @@ function runIntegratedFailureAnalysis(params: IntegratedFailureAnalysisParams, r
 
   const fullyMitigated = firstFailedStageIndex === -1;
   const metrics: Record<string, number> = {
-    stagesEvaluated,
     stagesReached: fullyMitigated ? STAGE_IDS.length : firstFailedStageIndex + 1,
     stagesHeld,
     stagesFailed,

@@ -64,6 +64,18 @@ describe("integratedFailureAnalysisModule golden seed (assessed seed 100)", () =
     }
   });
 
+  it("never advances the clock for stages that were never reached (regression)", () => {
+    const result = run(INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS);
+    const reachedEvents = result.trace.filter((e) => e.meta?.reached === true);
+    const unreachedEvents = result.trace.filter((e) => e.meta?.reached === false);
+    expect(reachedEvents).toHaveLength(1);
+    expect(unreachedEvents).toHaveLength(STAGE_IDS.length - 1);
+    const haltTimestamp = reachedEvents[0].timestamp;
+    for (const event of unreachedEvents) {
+      expect(event.timestamp).toBe(haltTimestamp);
+    }
+  });
+
   it("is deterministic: same seed and params produce an identical result", () => {
     expect(run(INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS)).toEqual(run(INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS));
   });
