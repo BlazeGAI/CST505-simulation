@@ -33,6 +33,8 @@ const THRASHING_WINDOW = 8;
 const THRASHING_FAULT_RATE = 0.6;
 const WORKING_SET_WINDOW = 10;
 const PROTECTED_FRAME_COUNT = 2;
+/** Compulsory misses while the working set first populates aren't thrashing; only score windows entirely after this phase. */
+const COLD_START_PHASE = "steady-ingestion";
 
 interface PageReference {
   page: number;
@@ -49,7 +51,7 @@ function generateReferenceString(rng: SeededRandom): PageReference[] {
     // resident because they're recently touched) from FIFO (evicts by
     // insertion age regardless of how recently a page was reused).
     const page = rng.bool(0.55) ? rng.pick([0, 1]) : rng.pick([2, 3, 4]);
-    refs.push({ page, phase: "steady-ingestion", isWrite: rng.bool(0.3) });
+    refs.push({ page, phase: COLD_START_PHASE, isWrite: rng.bool(0.3) });
   }
   for (let i = 0; i < 8; i++) {
     refs.push({ page: rng.int(5, 6), phase: "alert-burst", isWrite: rng.bool(0.4) });
@@ -82,11 +84,9 @@ function runVirtualMemory(params: VirtualMemoryParams, rng: SeededRandom): RunRe
   const refs = generateReferenceString(rng);
   const trace: TraceEvent[] = [];
 
-  const resident = new Map<number, Frame>(); // page -> frame state
-  const insertionOrder: number[] = []; // FIFO order of resident pages
+  const resident = new Map<number, Frame>(); // page -> frame state; Map preserves insertion order and hits never re-set a key, so resident.keys() is exactly the FIFO/Clock circular order.
   const lastUsed = new Map<number, number>(); // LRU timestamps
-  const clockOrder: number[] = []; // Clock circular order
-  let clockHand = 0;
+  let clockHandPage: number | null = null; // resume the Clock sweep at this page next time, not a raw array index
   const pinnedPages = new Set<number>();
 
   let clock = 0;
@@ -99,49 +99,55 @@ function runVirtualMemory(params: VirtualMemoryParams, rng: SeededRandom): RunRe
   let recoveryFaults = 0;
   let recoveryHits = 0;
   const hitFaultSequence: boolean[] = []; // true = fault
+  const phaseSequence: string[] = [];
   let thrashingDetectedAtIndex = -1;
   let thrashingWindowFaultRate = 0;
   let analyticsPhaseEntered = false;
 
   function pickVictim(): number {
-    const candidates = (params.policy === "fifo" ? insertionOrder : params.policy === "lru" ? [...resident.keys()] : clockOrder).filter(
-      (p) => resident.has(p) && !pinnedPages.has(p),
-    );
-    if (params.policy === "fifo") return candidates[0];
+    const order = [...resident.keys()];
+    if (params.policy === "fifo") {
+      return order.find((p) => !pinnedPages.has(p))!;
+    }
     if (params.policy === "lru") {
-      return candidates.reduce((oldest, p) => ((lastUsed.get(p) ?? 0) < (lastUsed.get(oldest) ?? 0) ? p : oldest));
+      return order
+        .filter((p) => !pinnedPages.has(p))
+        .reduce((oldest, p) => ((lastUsed.get(p) ?? 0) < (lastUsed.get(oldest) ?? 0) ? p : oldest));
     }
     // Clock: sweep from the hand, clearing reference bits, until an unpinned page with refBit=false is found.
-    for (let steps = 0; steps < clockOrder.length * 2; steps++) {
-      const page = clockOrder[clockHand % clockOrder.length];
-      clockHand = (clockHand + 1) % clockOrder.length;
-      if (!resident.has(page) || pinnedPages.has(page)) continue;
+    const startIndex = clockHandPage === null ? 0 : Math.max(order.indexOf(clockHandPage), 0);
+    for (let steps = 0; steps < order.length * 2; steps++) {
+      const index = (startIndex + steps) % order.length;
+      const page = order[index];
+      if (pinnedPages.has(page)) continue;
       const frame = resident.get(page)!;
       if (frame.refBit) {
         frame.refBit = false;
         continue;
       }
+      // Resume the next sweep at whichever page follows this one today;
+      // that page is unaffected by removing the victim, so no index-shift bookkeeping is needed.
+      clockHandPage = order.length > 1 ? order[(index + 1) % order.length] : null;
       return page;
     }
-    return candidates[0];
+    return order.find((p) => !pinnedPages.has(p))!;
   }
 
   function evict(): { evictedPage: number; wasDirty: boolean } {
     const victim = pickVictim();
     const frame = resident.get(victim)!;
     resident.delete(victim);
-    const orderIndex = insertionOrder.indexOf(victim);
-    if (orderIndex !== -1) insertionOrder.splice(orderIndex, 1);
-    const clockIndex = clockOrder.indexOf(victim);
-    if (clockIndex !== -1) clockOrder.splice(clockIndex, 1);
     lastUsed.delete(victim);
+    if (clockHandPage === victim) clockHandPage = null;
     return { evictedPage: victim, wasDirty: frame.dirty };
   }
 
   refs.forEach((ref, i) => {
     if (params.isolateAnalytics && ref.phase === "analytics-scan" && !analyticsPhaseEntered) {
       analyticsPhaseEntered = true;
-      const protectedCandidates = [...resident.keys()].slice(0, Math.min(PROTECTED_FRAME_COUNT, resident.size));
+      // Always leave at least one frame evictable, even at the minimum frame count.
+      const maxProtectable = Math.max(0, params.frames - 1);
+      const protectedCandidates = [...resident.keys()].slice(0, Math.min(PROTECTED_FRAME_COUNT, resident.size, maxProtectable));
       for (const page of protectedCandidates) pinnedPages.add(page);
     }
 
@@ -168,8 +174,6 @@ function runVirtualMemory(params: VirtualMemoryParams, rng: SeededRandom): RunRe
         if (result.wasDirty) writeBacks += 1;
       }
       resident.set(ref.page, { page: ref.page, dirty: ref.isWrite, refBit: true });
-      insertionOrder.push(ref.page);
-      clockOrder.push(ref.page);
       lastUsed.set(ref.page, clock);
     }
 
@@ -183,12 +187,19 @@ function runVirtualMemory(params: VirtualMemoryParams, rng: SeededRandom): RunRe
     }
 
     hitFaultSequence.push(!isHit);
+    phaseSequence.push(ref.phase);
     if (i >= THRASHING_WINDOW - 1 && thrashingDetectedAtIndex === -1) {
-      const window = hitFaultSequence.slice(i - THRASHING_WINDOW + 1, i + 1);
-      const windowFaultRate = window.filter(Boolean).length / THRASHING_WINDOW;
-      if (windowFaultRate >= THRASHING_FAULT_RATE) {
-        thrashingDetectedAtIndex = i;
-        thrashingWindowFaultRate = Number(windowFaultRate.toFixed(2));
+      const windowStart = i - THRASHING_WINDOW + 1;
+      const windowPhases = phaseSequence.slice(windowStart, i + 1);
+      // Compulsory misses while the working set first populates aren't thrashing;
+      // only score windows that fall entirely after the cold-start phase.
+      if (!windowPhases.includes(COLD_START_PHASE)) {
+        const window = hitFaultSequence.slice(windowStart, i + 1);
+        const windowFaultRate = window.filter(Boolean).length / THRASHING_WINDOW;
+        if (windowFaultRate >= THRASHING_FAULT_RATE) {
+          thrashingDetectedAtIndex = i;
+          thrashingWindowFaultRate = Number(windowFaultRate.toFixed(2));
+        }
       }
     }
 

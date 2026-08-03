@@ -240,7 +240,38 @@ export function VirtualMemoryClient() {
             No runs yet. Try FIFO, LRU, and Clock at 4 frames, then vary the frame count.
           </p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
+          <>
+            <div className="mt-3">
+              <h3 className="text-sm font-semibold">Frame-allocation fault-rate chart</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Bar length is each run&apos;s fault rate, sorted by frame count. The table below
+                carries the exact figures for every metric.
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {[...runsDraft.value]
+                  .sort((a, b) => Number(a.config.params.frames) - Number(b.config.params.frames))
+                  .map((run, i) => {
+                    const pct = Math.round(run.result.metrics.faultRate * 100);
+                    return (
+                      <li key={i} className="flex items-center gap-2 text-sm">
+                        <span className="w-40 shrink-0 truncate">
+                          {POLICY_LABELS[run.config.params.policy as Policy]} @{" "}
+                          {String(run.config.params.frames)}f
+                        </span>
+                        <span className="relative h-4 flex-1 rounded bg-slate-100 dark:bg-slate-800">
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-y-0 left-0 rounded bg-indigo-600 dark:bg-indigo-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </span>
+                        <span className="w-24 shrink-0 text-right tabular-nums">{pct}% faults</span>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
+            <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-sm">
               <caption className="mb-2 text-left text-sm text-slate-500 dark:text-slate-400">
                 Policy comparison table. Runs are listed newest first.
@@ -282,7 +313,8 @@ export function VirtualMemoryClient() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
 
         {runsDraft.value.map((run, i) => (
