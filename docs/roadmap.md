@@ -13,7 +13,7 @@ pull request, after the foundation is approved.
 | 3 | Virtual Memory | `virtual-memory` | Week 3 | Available |
 | 4 | Crash Consistency | `crash-consistency` | Week 4 | Available |
 | 5 | Virtualization and Isolation | `virtualization-and-isolation` | Week 5 | Available |
-| 6 | Integrated Operating-System Failure Analysis | `integrated-failure-analysis` | Week 6 | Planned |
+| 6 | Integrated Operating-System Failure Analysis | `integrated-failure-analysis` | Week 6 | Available |
 
 Module metadata (title, summary, learning goals, status) lives in `src/lib/sim/modules.ts` — update
 a module's `status` from `"planned"` to `"available"` as part of the PR that ships it.

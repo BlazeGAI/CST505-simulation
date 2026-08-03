@@ -100,7 +100,7 @@ export const MODULES: ModuleSummary[] = [
       "Evaluate an operating-system architecture under compound load and failure scenarios using simulation evidence and an established security framework.",
       "Defend a written recommendation by connecting constraints, alternatives, evidence, and tradeoffs.",
     ],
-    status: "planned",
+    status: "available",
   },
 ];
 
