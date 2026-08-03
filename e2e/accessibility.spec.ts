@@ -8,6 +8,7 @@ const PAGES = [
   "/modules/system-call-contracts",
   "/modules/scheduling-and-concurrency",
   "/modules/virtual-memory",
+  "/modules/crash-consistency",
 ];
 
 for (const path of PAGES) {
@@ -62,5 +63,15 @@ test("the Virtual Memory page's run workflow is reachable by keyboard alone", as
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
   await page.keyboard.press("Enter");
   const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
+  await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
+});
+
+test("the Crash Consistency page's crash-point run workflow is reachable by keyboard alone", async ({ page }) => {
+  await page.goto("/modules/crash-consistency");
+  await page.getByLabel("Crash point", { exact: true }).focus();
+  await page.keyboard.press("Tab"); // Run simulation button
+  await expect(page.getByRole("button", { name: "Run simulation" }).first()).toBeFocused();
+  await page.keyboard.press("Enter");
+  const resultsTable = page.getByRole("region", { name: "3. Configure and run: crash point" }).getByRole("table");
   await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
 });
