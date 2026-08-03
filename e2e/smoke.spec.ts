@@ -10,8 +10,8 @@ test("home page lists all six modules and links to the foundation demo", async (
 });
 
 test("a module placeholder page explains that its simulation ships in a follow-up PR", async ({ page }) => {
-  await page.goto("/modules/virtual-memory");
-  await expect(page.getByRole("heading", { name: "Virtual Memory" })).toBeVisible();
+  await page.goto("/modules/virtualization-and-isolation");
+  await expect(page.getByRole("heading", { name: "Virtualization and Isolation" })).toBeVisible();
   await expect(page.getByText(/follow-up pull request/)).toBeVisible();
 });
 
