@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MODULES } from "@/lib/sim/modules";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function SiteHeader() {
   return (
@@ -25,6 +26,7 @@ export function SiteHeader() {
             ))}
           </ul>
         </nav>
+        <ThemeToggle />
       </div>
     </header>
   );
