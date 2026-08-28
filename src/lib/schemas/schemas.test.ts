@@ -52,7 +52,7 @@ describe("evidence record schema", () => {
 });
 
 describe("export package schema", () => {
-  it("accepts a package containing one run and an evidence record", () => {
+  function packageContents() {
     const config = createScenarioConfig({
       moduleId: "reference-demo",
       scenarioId: "reference-demo-normal",
@@ -72,14 +72,29 @@ describe("export package schema", () => {
       scenarioId: "reference-demo-normal",
       seed: 42,
     });
-    const pkg = {
-      schemaVersion: 1,
+    return {
       appVersion: "0.1.0",
       exportedAt: new Date().toISOString(),
       moduleId: "reference-demo",
       moduleTitle: "Foundation Engine Demo",
       runs: [{ config, result }],
       evidenceRecord,
+    };
+  }
+
+  it("continues to accept a version 1 package", () => {
+    const pkg = { schemaVersion: 1, ...packageContents() };
+    expect(() => ExportPackageSchema.parse(pkg)).not.toThrow();
+  });
+
+  it("accepts a version 2 package with an explicit selected run", () => {
+    const pkg = {
+      schemaVersion: 2,
+      ...packageContents(),
+      selectedRun: {
+        configModuleId: "reference-demo",
+        scenarioId: "reference-demo-normal",
+      },
     };
     expect(() => ExportPackageSchema.parse(pkg)).not.toThrow();
   });

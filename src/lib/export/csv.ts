@@ -41,6 +41,10 @@ export function exportPackageToCsv(pkg: ExportPackage): string {
 
   lines.push("");
   lines.push(csvRow(["field", "value"]));
+  if (pkg.schemaVersion === 2 && pkg.selectedRun) {
+    lines.push(csvRow(["Selected run module", pkg.selectedRun.configModuleId]));
+    lines.push(csvRow(["Selected run scenario", pkg.selectedRun.scenarioId]));
+  }
   lines.push(csvRow(["Evidence package label", pkg.evidenceRecord.preparedBy]));
   for (const field of EVIDENCE_RECORD_FIELDS) {
     lines.push(csvRow([field.label, pkg.evidenceRecord[field.key]]));

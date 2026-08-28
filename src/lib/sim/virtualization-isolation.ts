@@ -6,31 +6,44 @@ import { RunResultSchema, type RunResult, type TraceEvent } from "../schemas/run
 /**
  * Week 5: Virtualization and Isolation. One host runs two HarborLink
  * tenants — a steady PRIMARY service and a NOISY neighbor — under one of
- * four isolation boundaries. The workload is identical across boundaries;
- * only the enforcement mechanism changes, which is exactly the point: a
- * container's namespaces *look* like isolation whether or not a cgroup cap
- * is actually configured, but only the enforced cap protects the primary
- * tenant's CPU share, and only a hardware VM boundary survives a
+ * three isolation boundaries. The workload is identical across boundaries.
+ * CPU, memory, and network/storage controls are independent so students can
+ * restore the baseline and test one mechanism at a time. Only an enforced
+ * CPU cap protects the primary tenant's CPU share, and only a hardware VM boundary survives a
  * kernel-level fault in the noisy tenant, because containers still share
  * one kernel with their host.
  */
-export const BOUNDARY_TYPES = ["process", "container-unbounded", "container-limited", "vm"] as const;
+export const BOUNDARY_TYPES = ["process", "container", "vm"] as const;
 export type BoundaryType = (typeof BOUNDARY_TYPES)[number];
+
+export const RESTRICTION_TYPES = ["none", "network", "storage"] as const;
+export type RestrictionType = (typeof RESTRICTION_TYPES)[number];
 
 export const BOUNDARY_LABELS: Record<BoundaryType, string> = {
   process: "Bare process (no isolation)",
-  "container-unbounded": "Container, no cgroup limits",
-  "container-limited": "Container, cgroup CPU cap",
+  container: "Container (shared host kernel)",
   vm: "Hardware-virtualized VM",
+};
+
+export const RESTRICTION_LABELS: Record<RestrictionType, string> = {
+  none: "No network/storage restriction",
+  network: "Network egress restriction",
+  storage: "Storage I/O restriction",
 };
 
 export const VirtualizationIsolationParamsSchema = z.object({
   boundary: z.enum(BOUNDARY_TYPES),
+  cpuControlEnabled: z.boolean(),
+  memoryControlEnabled: z.boolean(),
+  restriction: z.enum(RESTRICTION_TYPES),
 });
 export type VirtualizationIsolationParams = z.infer<typeof VirtualizationIsolationParamsSchema>;
 
 export const VIRTUALIZATION_ISOLATION_DEFAULT_PARAMS: VirtualizationIsolationParams = {
   boundary: "process",
+  cpuControlEnabled: false,
+  memoryControlEnabled: false,
+  restriction: "none",
 };
 
 /** Published seed every student's assessed comparison must use. */
@@ -43,41 +56,25 @@ export const FAULT_TICK = 25;
 const HOST_CPU_CAPACITY = 100;
 
 interface BoundaryProfile {
-  /** Hard ceiling on the noisy tenant's CPU share, or null if unenforced. */
-  noisyCpuCap: number | null;
   /** Whether a kernel-level fault in the noisy tenant reaches the primary tenant. */
   sharesKernel: boolean;
-  memoryCapEnforced: boolean;
   overheadRange: readonly [number, number];
   bootLatencyRange: readonly [number, number];
 }
 
 const BOUNDARY_PROFILES: Record<BoundaryType, BoundaryProfile> = {
   process: {
-    noisyCpuCap: null,
     sharesKernel: true,
-    memoryCapEnforced: false,
     overheadRange: [0, 2],
     bootLatencyRange: [5, 15],
   },
-  "container-unbounded": {
-    noisyCpuCap: null,
+  container: {
     sharesKernel: true,
-    memoryCapEnforced: false,
     overheadRange: [4, 8],
     bootLatencyRange: [90, 180],
   },
-  "container-limited": {
-    noisyCpuCap: 30,
-    sharesKernel: true,
-    memoryCapEnforced: true,
-    overheadRange: [5, 10],
-    bootLatencyRange: [100, 220],
-  },
   vm: {
-    noisyCpuCap: 50,
     sharesKernel: false,
-    memoryCapEnforced: true,
     overheadRange: [25, 40],
     bootLatencyRange: [2500, 4500],
   },
@@ -100,17 +97,17 @@ function noisyDemandAt(tick: number, rng: SeededRandom): number {
 
 /** Splits the host's fixed CPU capacity between the two tenants for one tick. */
 function allocate(
-  profile: BoundaryProfile,
+  noisyCpuCap: number | null,
   primaryDemand: number,
   noisyDemand: number,
 ): { primaryAllocated: number; noisyAllocated: number } {
-  if (profile.noisyCpuCap === null) {
+  if (noisyCpuCap === null) {
     const total = primaryDemand + noisyDemand;
     if (total <= HOST_CPU_CAPACITY) return { primaryAllocated: primaryDemand, noisyAllocated: noisyDemand };
     const scale = HOST_CPU_CAPACITY / total;
     return { primaryAllocated: primaryDemand * scale, noisyAllocated: noisyDemand * scale };
   }
-  const noisyAllocated = Math.min(noisyDemand, profile.noisyCpuCap);
+  const noisyAllocated = Math.min(noisyDemand, noisyCpuCap);
   const primaryAllocated = Math.min(primaryDemand, HOST_CPU_CAPACITY - noisyAllocated);
   return { primaryAllocated, noisyAllocated };
 }
@@ -118,15 +115,31 @@ function allocate(
 function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: SeededRandom): RunResult {
   const profile = BOUNDARY_PROFILES[params.boundary];
   const trace: TraceEvent[] = [];
+  const noisyCpuCap = params.cpuControlEnabled ? 30 : null;
 
   const bootLatencyMs = rng.int(profile.bootLatencyRange[0], profile.bootLatencyRange[1]);
-  const overheadPercent = rng.int(profile.overheadRange[0], profile.overheadRange[1]);
+  const controlOverhead = Number(params.cpuControlEnabled) + Number(params.memoryControlEnabled);
+  const restrictionOverhead = params.restriction === "none" ? 0 : params.restriction === "network" ? 1 : 2;
+  const overheadPercent =
+    rng.int(profile.overheadRange[0], profile.overheadRange[1]) + controlOverhead + restrictionOverhead;
   trace.push({
     index: trace.length,
     label: "system:boot",
     detail: `${BOUNDARY_LABELS[params.boundary]} boundary boots in ${bootLatencyMs}ms (${overheadPercent}% steady-state overhead).`,
     timestamp: 0,
     meta: { event: "boot", bootLatencyMs, overheadPercent },
+  });
+  trace.push({
+    index: trace.length,
+    label: "system:controls",
+    detail: `CPU control ${params.cpuControlEnabled ? "on (noisy tenant capped at 30%)" : "off"}; memory control ${params.memoryControlEnabled ? "on" : "off"}; ${RESTRICTION_LABELS[params.restriction]}.`,
+    timestamp: 0,
+    meta: {
+      event: "controls",
+      cpuControlEnabled: params.cpuControlEnabled,
+      memoryControlEnabled: params.memoryControlEnabled,
+      restriction: params.restriction,
+    },
   });
 
   let cpuStarvationTicks = 0;
@@ -140,7 +153,7 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
     const noisyDemand = noisyDemandAt(tick, rng);
     const { primaryAllocated, noisyAllocated } = downAfterFault
       ? { primaryAllocated: 0, noisyAllocated: 0 }
-      : allocate(profile, primaryDemand, noisyDemand);
+      : allocate(noisyCpuCap, primaryDemand, noisyDemand);
     const deficit = Math.max(0, primaryDemand - primaryAllocated);
     if (deficit > 0) cpuStarvationTicks += 1;
     totalCpuDeficit += deficit;
@@ -206,7 +219,11 @@ function runVirtualizationIsolation(params: VirtualizationIsolationParams, rng: 
     avgNoisyCpuAllocated: Number((noisyAllocatedSum / TOTAL_TICKS).toFixed(1)),
     overheadPercent,
     bootLatencyMs,
-    memoryCapEnforced: profile.memoryCapEnforced ? 1 : 0,
+    cpuControlEnabled: params.cpuControlEnabled ? 1 : 0,
+    memoryControlEnabled: params.memoryControlEnabled ? 1 : 0,
+    memoryLimitBreaches: params.memoryControlEnabled ? 0 : NOISY_BURST_END - NOISY_BURST_START + 1,
+    networkPacketsDropped: params.restriction === "network" ? 120 : 0,
+    storageOpsThrottled: params.restriction === "storage" ? 48 : 0,
     faultContained: profile.sharesKernel ? 0 : 1,
   };
 

@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Integrated Failure Analysis module", () => {
-  test("imports and validates a Simulation 2 JSON evidence package", async ({ page }) => {
+  test("imports the explicitly selected SJF/STCF run from a Simulation 2 package", async ({ page }) => {
     await page.goto("/modules/integrated-failure-analysis");
     const pkg = {
-      schemaVersion: 1,
-      appVersion: "0.2.0",
+      schemaVersion: 2,
+      appVersion: "0.3.0",
       exportedAt: "2026-08-28T00:00:00.000Z",
       moduleId: "scheduling-and-concurrency",
       moduleTitle: "Processes, Scheduling, and Concurrency Investigation",
@@ -13,21 +13,40 @@ test.describe("Integrated Failure Analysis module", () => {
         config: {
           schemaVersion: 1,
           moduleId: "scheduling-policy",
-          scenarioId: "round-robin",
+          scenarioId: "fifo",
           scenarioVersion: "1.0.0",
           engineVersion: "1.0.0",
           seed: 505,
-          params: { policy: "round-robin", timeQuantum: 4 },
+          params: { policy: "fifo", timeQuantum: 4 },
         },
         result: {
           schemaVersion: 1,
           moduleId: "scheduling-policy",
-          scenarioId: "round-robin",
+          scenarioId: "fifo",
+          seed: 505,
+          metrics: {},
+          trace: [],
+        },
+      }, {
+        config: {
+          schemaVersion: 1,
+          moduleId: "scheduling-policy",
+          scenarioId: "sjf-stcf",
+          scenarioVersion: "1.0.0",
+          engineVersion: "1.0.0",
+          seed: 505,
+          params: { policy: "sjf-stcf", timeQuantum: 4 },
+        },
+        result: {
+          schemaVersion: 1,
+          moduleId: "scheduling-policy",
+          scenarioId: "sjf-stcf",
           seed: 505,
           metrics: {},
           trace: [],
         },
       }],
+      selectedRun: { configModuleId: "scheduling-policy", scenarioId: "sjf-stcf" },
       evidenceRecord: {
         schemaVersion: 1,
         moduleId: "scheduling-and-concurrency",
@@ -44,7 +63,7 @@ test.describe("Integrated Failure Analysis module", () => {
     });
 
     await expect(page.getByRole("status")).toContainText("Loaded 1 package");
-    await expect(page.getByLabel("Scheduling policy")).toHaveValue("round-robin");
+    await expect(page.getByLabel("Scheduling policy")).toHaveValue("sjf-stcf");
   });
 
   test("the default (weakest-policy) configuration fails at the very first stage: scheduling", async ({ page }) => {

@@ -12,7 +12,10 @@ tests, the shared Simulation Evidence Record, local draft storage, JSON/CSV/prin
 and keyboard/accessibility checks. Course-facing labels match the revised design document:
 Activities 1.3, 2.2, 3.2, 4.2, 5.2, and 6.2. The interface explicitly separates live or supplied
 observation, simulated evidence, textbook interpretation, assumptions, unresolved questions, and
-production limitations. Activity 6.2 validates and imports JSON packages from Simulations 2-5.
+production limitations. Activity 2.2 compares FIFO/FCFS, SJF/STCF, and round robin (with fair-share
+as a supplemental policy). Activity 5.2 separates the isolation boundary from CPU, memory, and
+network/storage controls so students can change one variable at a time. Activity 6.2 validates and
+imports JSON packages from Simulations 2-5, including the exact Week 2 policy the student selects.
 
 ## Getting started
 

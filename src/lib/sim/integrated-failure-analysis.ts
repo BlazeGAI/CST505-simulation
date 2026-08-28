@@ -69,6 +69,13 @@ function evaluateScheduling(policy: SchedulingPolicy): StageOutcome {
       detail: "fair-share preempts for the safety-alert class immediately; the deadline is met.",
     };
   }
+  if (policy === "sjf-stcf") {
+    return {
+      constraintHeld: true,
+      detail:
+        "SJF/STCF preempts because the arriving safety-alert burst is shorter than the low-priority job's remaining burst; the deadline is met in this incident, though the policy does not guarantee priority protection.",
+    };
+  }
   return {
     constraintHeld: false,
     detail: `${policy === "fifo" ? "FIFO" : "round-robin"} keeps running the already-dispatched low-priority job for at least one more burst/quantum; the safety-alert deadline is missed.`,

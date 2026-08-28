@@ -3,8 +3,13 @@ import { createEmptyEvidenceRecord } from "@/lib/schemas/evidence-record";
 import { createScenarioConfig } from "@/lib/schemas/scenario-config";
 import { parseIntegratedEvidencePackage } from "./integrated-evidence";
 
-function packageJson(moduleId: string, configModuleId: string, params: Record<string, unknown>) {
-  const config = createScenarioConfig({ moduleId: configModuleId, scenarioId: "test", seed: 505, params });
+function packageJson(
+  moduleId: string,
+  configModuleId: string,
+  params: Record<string, unknown>,
+  scenarioId = "test",
+) {
+  const config = createScenarioConfig({ moduleId: configModuleId, scenarioId, seed: 505, params });
   return JSON.stringify({
     schemaVersion: 1,
     appVersion: "0.2.0",
@@ -16,13 +21,35 @@ function packageJson(moduleId: string, configModuleId: string, params: Record<st
       result: {
         schemaVersion: 1,
         moduleId: configModuleId,
-        scenarioId: "test",
+        scenarioId,
         seed: 505,
         metrics: {},
         trace: [],
       },
     }],
     evidenceRecord: createEmptyEvidenceRecord({ moduleId, scenarioId: "test", seed: 505 }),
+  });
+}
+
+function selectedSchedulingPackageJson() {
+  const fifo = JSON.parse(packageJson(
+    "scheduling-and-concurrency",
+    "scheduling-policy",
+    { policy: "fifo", timeQuantum: 4 },
+    "fifo",
+  ));
+  const stcf = JSON.parse(packageJson(
+    "scheduling-and-concurrency",
+    "scheduling-policy",
+    { policy: "sjf-stcf", timeQuantum: 4 },
+    "sjf-stcf",
+  ));
+  return JSON.stringify({
+    ...fifo,
+    schemaVersion: 2,
+    appVersion: "0.3.0",
+    runs: [...fifo.runs, ...stcf.runs],
+    selectedRun: { configModuleId: "scheduling-policy", scenarioId: "sjf-stcf" },
   });
 }
 
@@ -51,6 +78,22 @@ describe("integrated evidence import", () => {
       "virtualization-isolation",
       { boundary: "vm" },
     )).selection).toEqual({ isolationBoundary: "vm" });
+  });
+
+  it("imports the exact Week 2 policy selected in a version 2 package", () => {
+    expect(parseIntegratedEvidencePackage(selectedSchedulingPackageJson()).selection).toEqual({
+      schedulingPolicy: "sjf-stcf",
+    });
+  });
+
+  it("migrates either legacy container boundary to the current container option", () => {
+    for (const boundary of ["container-unbounded", "container-limited"]) {
+      expect(parseIntegratedEvidencePackage(packageJson(
+        "virtualization-and-isolation",
+        "virtualization-isolation",
+        { boundary },
+      )).selection).toEqual({ isolationBoundary: "container" });
+    }
   });
 
   it("rejects malformed and unrelated files", () => {

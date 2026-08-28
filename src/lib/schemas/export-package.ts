@@ -9,8 +9,7 @@ import { EvidenceRecordSchema } from "./evidence-record";
  * comparison, plus the evidence record that interprets them. `exportedAt`
  * and `appVersion` let a grader tell which build produced a given export.
  */
-export const ExportPackageSchema = z.object({
-  schemaVersion: z.literal(SCHEMA_VERSIONS.exportPackage),
+const ExportPackageContentsSchema = z.object({
   appVersion: z.string(),
   exportedAt: z.string(),
   moduleId: z.string().min(1),
@@ -24,4 +23,25 @@ export const ExportPackageSchema = z.object({
   evidenceRecord: EvidenceRecordSchema,
 });
 
+export const SelectedRunSchema = z.object({
+  configModuleId: z.string().min(1),
+  scenarioId: z.string().min(1),
+});
+
+export const LegacyExportPackageSchema = ExportPackageContentsSchema.extend({
+  schemaVersion: z.literal(1),
+});
+
+export const CurrentExportPackageSchema = ExportPackageContentsSchema.extend({
+  schemaVersion: z.literal(SCHEMA_VERSIONS.exportPackage),
+  selectedRun: SelectedRunSchema.optional(),
+});
+
+/** Accept v1 packages for import while all new exports use v2. */
+export const ExportPackageSchema = z.discriminatedUnion("schemaVersion", [
+  LegacyExportPackageSchema,
+  CurrentExportPackageSchema,
+]);
+
 export type ExportPackage = z.infer<typeof ExportPackageSchema>;
+export type CurrentExportPackage = z.infer<typeof CurrentExportPackageSchema>;

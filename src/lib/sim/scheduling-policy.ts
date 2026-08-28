@@ -5,13 +5,13 @@ import { RunResultSchema, type RunResult, type TraceEvent } from "../schemas/run
 
 /**
  * Week 2: Scheduling and Concurrency (scheduling half). Five HarborLink
- * workload classes compete for one CPU under three policies. Every job
+ * workload classes compete for one CPU under four policies. Every job
  * eventually receives its full CPU burst regardless of policy, so "total
  * service received" can't distinguish policies — what changes is *when*
  * each class is served, which response time, waiting time, and the
  * fairness index (below) are built to expose.
  */
-export const POLICIES = ["fifo", "round-robin", "fair-share"] as const;
+export const POLICIES = ["fifo", "sjf-stcf", "round-robin", "fair-share"] as const;
 export type Policy = (typeof POLICIES)[number];
 
 export const WORKLOAD_CLASSES = [
@@ -94,9 +94,27 @@ function generateJobs(rng: SeededRandom): Job[] {
 
 /** Index (within `ready`) of the job the policy would pick from the front of its queue. */
 function selectIndex(policy: Policy, ready: Job[]): number {
-  if (policy !== "fair-share") return 0;
-  const topPriority = Math.max(...ready.map((j) => j.priority));
-  return ready.findIndex((j) => j.priority === topPriority);
+  if (policy === "fair-share") {
+    const topPriority = Math.max(...ready.map((j) => j.priority));
+    return ready.findIndex((j) => j.priority === topPriority);
+  }
+  if (policy === "sjf-stcf") {
+    let shortestIndex = 0;
+    for (let i = 1; i < ready.length; i += 1) {
+      const candidate = ready[i];
+      const shortest = ready[shortestIndex];
+      if (
+        candidate.remainingBurst < shortest.remainingBurst ||
+        (candidate.remainingBurst === shortest.remainingBurst &&
+          (candidate.arrival < shortest.arrival ||
+            (candidate.arrival === shortest.arrival && candidate.id.localeCompare(shortest.id) < 0)))
+      ) {
+        shortestIndex = i;
+      }
+    }
+    return shortestIndex;
+  }
+  return 0;
 }
 
 function runScheduler(params: SchedulingPolicyParams, rng: SeededRandom): RunResult {
@@ -144,12 +162,22 @@ function runScheduler(params: SchedulingPolicyParams, rng: SeededRandom): RunRes
     }
 
     // Phase C: decide whether the current job continues, or a new one is dispatched.
-    const mustYield =
+    const shortestReadyBurst = ready.length > 0
+      ? Math.min(...ready.map((job) => job.remainingBurst))
+      : Number.POSITIVE_INFINITY;
+    const shorterJobReady =
       current !== null &&
-      (params.policy !== "fifo" && current.runSinceQuantumStart >= params.timeQuantum);
+      params.policy === "sjf-stcf" &&
+      shortestReadyBurst < current.remainingBurst;
+    const quantumExpired =
+      current !== null &&
+      (params.policy === "round-robin" || params.policy === "fair-share") &&
+      current.runSinceQuantumStart >= params.timeQuantum;
+    const mustYield = shorterJobReady || quantumExpired;
     if (current && mustYield) {
       ready.push(current);
-      push(current.classId, "preempt", `${current.id} preempted (quantum expired)`, { jobId: current.id });
+      const reason = shorterJobReady ? "shorter remaining job became ready" : "quantum expired";
+      push(current.classId, "preempt", `${current.id} preempted (${reason})`, { jobId: current.id, reason });
       current = null;
     }
     if (!current && ready.length > 0) {

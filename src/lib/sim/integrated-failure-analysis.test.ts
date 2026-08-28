@@ -41,6 +41,14 @@ describe("integratedFailureAnalysisModule golden seed (assessed seed 100)", () =
     expect(result.metrics).toMatchObject({ firstFailedStageIndex: 1, stagesReached: 2 });
   });
 
+  it("evaluates an imported SJF/STCF selection without rejecting or coercing it", () => {
+    const result = run({ ...INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS, schedulingPolicy: "sjf-stcf" });
+    expect(result.metrics).toMatchObject({ firstFailedStageIndex: 1, stagesReached: 2 });
+    const scheduling = result.trace.find((event) => event.meta?.stageId === "scheduling");
+    expect(scheduling?.meta).toMatchObject({ reached: true, constraintHeld: true });
+    expect(scheduling?.detail).toContain("shorter than the low-priority job's remaining burst");
+  });
+
   it("fixing scheduling and memory moves the first failure to durability", () => {
     const result = run({
       ...INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS,

@@ -34,6 +34,7 @@ interface StoredRun {
 
 const POLICY_LABELS: Record<Policy, string> = {
   fifo: "FIFO",
+  "sjf-stcf": "SJF/STCF (shortest remaining time)",
   "round-robin": "Round robin",
   "fair-share": "Fair-share (priority)",
 };
@@ -72,6 +73,10 @@ export function SchedulingAndConcurrencyClient() {
 
   const scheduleRuns = useLocalDraft<StoredRun[]>(draftKey(MODULE_ID, "scheduling-policy", "runs"), []);
   const ringBufferRuns = useLocalDraft<StoredRun[]>(draftKey(MODULE_ID, "ring-buffer", "runs"), []);
+  const selectedPolicyDraft = useLocalDraft<Policy | null>(
+    draftKey(MODULE_ID, "selected-policy", "config"),
+    null,
+  );
   const evidenceDraft = useLocalDraft(
     draftKey(MODULE_ID, "assessed", "evidence"),
     createEmptyEvidenceRecord({ moduleId: MODULE_ID, scenarioId: "assessed", seed: SCHEDULING_SEED }),
@@ -79,6 +84,7 @@ export function SchedulingAndConcurrencyClient() {
 
   function handleRunPolicy() {
     scheduleRuns.setValue([runPolicy(policy, timeQuantum), ...scheduleRuns.value].slice(0, MAX_RUNS));
+    if (selectedPolicyDraft.value === null) selectedPolicyDraft.setValue(policy);
   }
 
   function handleRunRingBuffer() {
@@ -237,7 +243,8 @@ export function SchedulingAndConcurrencyClient() {
 
         {scheduleRuns.value.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            No runs yet. Try FIFO, round robin, and fair-share with the same quantum to compare.
+            No runs yet. Run the assigned FIFO, SJF/STCF, and round-robin policies with the same
+            workload and seed. Fair-share is available as an additional priority-policy comparison.
           </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
@@ -408,8 +415,32 @@ export function SchedulingAndConcurrencyClient() {
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Export the policy comparison, ring-buffer results, and evidence record together as JSON,
-          as CSV, or a print-ready worksheet.
+          as CSV, or a print-ready worksheet. Select the scheduling policy that Week 6 should import;
+          this is stored explicitly rather than inferred from run order.
         </p>
+        <div className="print:hidden mt-3 max-w-md">
+          <label htmlFor="selected-scheduling-policy" className="block text-sm font-medium">
+            Policy selected for Week 6 integration
+          </label>
+          <select
+            id="selected-scheduling-policy"
+            value={selectedPolicyDraft.value ?? ""}
+            onChange={(event) => selectedPolicyDraft.setValue(event.target.value as Policy)}
+            disabled={scheduleRuns.value.length === 0}
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="" disabled>
+              Run a scheduling policy first
+            </option>
+            {POLICIES.filter((candidate) =>
+              scheduleRuns.value.some((run) => run.config.params.policy === candidate),
+            ).map((candidate) => (
+              <option key={candidate} value={candidate}>
+                {POLICY_LABELS[candidate]}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="mt-3">
           <ExportBar
             moduleId={MODULE_ID}
@@ -419,6 +450,14 @@ export function SchedulingAndConcurrencyClient() {
               moduleTitle: MODULE_TITLE,
               runs: [...scheduleRuns.value, ...ringBufferRuns.value],
               evidenceRecord: evidenceDraft.value,
+              ...(selectedPolicyDraft.value
+                ? {
+                    selectedRun: {
+                      configModuleId: "scheduling-policy",
+                      scenarioId: selectedPolicyDraft.value,
+                    },
+                  }
+                : {}),
             })}
           />
         </div>

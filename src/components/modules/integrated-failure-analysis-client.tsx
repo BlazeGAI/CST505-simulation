@@ -34,6 +34,7 @@ const MAX_RUNS = 8;
 
 const SCHEDULING_POLICY_LABELS: Record<SchedulingPolicy, string> = {
   fifo: "FIFO",
+  "sjf-stcf": "SJF/STCF",
   "round-robin": "Round robin",
   "fair-share": "Fair-share",
 };

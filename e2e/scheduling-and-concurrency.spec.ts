@@ -52,11 +52,22 @@ test.describe("Scheduling and Concurrency module", () => {
       .click();
     await page
       .locator("form")
+      .filter({ has: page.getByLabel("Policy") })
+      .getByLabel("Policy")
+      .selectOption("sjf-stcf");
+    await page
+      .locator("form")
+      .filter({ has: page.getByLabel("Policy") })
+      .getByRole("button", { name: "Run simulation" })
+      .click();
+    await page
+      .locator("form")
       .filter({ has: page.getByLabel("Synchronization") })
       .getByRole("button", { name: "Run simulation" })
       .click();
 
     await page.getByLabel("Prediction").fill("Fair-share should protect the safety-alert deadline.");
+    await page.getByLabel("Policy selected for Week 6 integration").selectOption("sjf-stcf");
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download JSON" }).click();
@@ -69,6 +80,11 @@ test.describe("Scheduling and Concurrency module", () => {
     const moduleIds = pkg.runs.map((r: { config: { moduleId: string } }) => r.config.moduleId);
     expect(moduleIds).toContain("scheduling-policy");
     expect(moduleIds).toContain("ring-buffer");
+    expect(pkg.schemaVersion).toBe(2);
+    expect(pkg.selectedRun).toEqual({
+      configModuleId: "scheduling-policy",
+      scenarioId: "sjf-stcf",
+    });
   });
 
   test("a run's trace stays visible when printing even if its <details> disclosure was never opened (regression)", async ({

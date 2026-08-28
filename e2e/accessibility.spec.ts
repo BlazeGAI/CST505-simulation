@@ -78,6 +78,9 @@ test("the Crash Consistency page's crash-point run workflow is reachable by keyb
 test("the Virtualization and Isolation page's run workflow is reachable by keyboard alone", async ({ page }) => {
   await page.goto("/modules/virtualization-and-isolation");
   await page.getByLabel("Isolation boundary").focus();
+  await page.keyboard.press("Tab"); // CPU control checkbox
+  await page.keyboard.press("Tab"); // Memory control checkbox
+  await page.keyboard.press("Tab"); // Network/storage restriction
   await page.keyboard.press("Tab"); // Run simulation button
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
   await page.keyboard.press("Enter");

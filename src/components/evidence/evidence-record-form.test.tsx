@@ -47,4 +47,23 @@ describe("EvidenceRecordForm", () => {
     expect(lastCall.prediction).toBe("x");
     expect(lastCall.updatedAt).not.toBe(value.updatedAt);
   });
+
+  it("shows the independent-control reminder only for Week 5 evidence", () => {
+    const week5 = createEmptyEvidenceRecord({
+      moduleId: "virtualization-and-isolation",
+      scenarioId: "assessed",
+      seed: 505,
+    });
+    const { unmount } = render(<EvidenceRecordForm value={week5} onChange={() => {}} />);
+    expect(screen.getByText(/No parallel live observation is required for Week 5/i)).toBeInTheDocument();
+    unmount();
+
+    const week2 = createEmptyEvidenceRecord({
+      moduleId: "scheduling-and-concurrency",
+      scenarioId: "assessed",
+      seed: 505,
+    });
+    render(<EvidenceRecordForm value={week2} onChange={() => {}} />);
+    expect(screen.queryByText(/No parallel live observation is required for Week 5/i)).not.toBeInTheDocument();
+  });
 });

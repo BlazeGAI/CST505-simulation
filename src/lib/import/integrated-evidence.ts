@@ -11,11 +11,21 @@ export interface ImportedEvidenceSelection {
   selection: Partial<IntegratedFailureAnalysisParams>;
 }
 
-function latestParams(
-  runs: ReturnType<typeof ExportPackageSchema.parse>["runs"],
+function selectedParams(
+  pkg: ReturnType<typeof ExportPackageSchema.parse>,
   configModuleId: string,
 ): Record<string, unknown> | undefined {
-  return runs.find((run) => run.config.moduleId === configModuleId)?.config.params;
+  const selectedRun = pkg.schemaVersion === 2 ? pkg.selectedRun : undefined;
+  if (selectedRun?.configModuleId === configModuleId) {
+    return pkg.runs.find(
+      (run) =>
+        run.config.moduleId === configModuleId &&
+        run.config.scenarioId === selectedRun.scenarioId,
+    )?.config.params;
+  }
+  // Version 1 packages did not identify a selected run. Their run arrays are
+  // newest-first, so preserve the historical first-matching-run behavior.
+  return pkg.runs.find((run) => run.config.moduleId === configModuleId)?.config.params;
 }
 
 export function parseIntegratedEvidencePackage(text: string): ImportedEvidenceSelection {
@@ -31,7 +41,7 @@ export function parseIntegratedEvidencePackage(text: string): ImportedEvidenceSe
   const pkg = parsed.data;
 
   if (pkg.moduleId === "scheduling-and-concurrency") {
-    const params = latestParams(pkg.runs, "scheduling-policy");
+    const params = selectedParams(pkg, "scheduling-policy");
     const policy = params?.policy;
     if (typeof policy !== "string" || !SCHEDULING_POLICIES.includes(policy as never)) {
       throw new Error("The scheduling package does not contain a supported saved policy run.");
@@ -40,7 +50,7 @@ export function parseIntegratedEvidencePackage(text: string): ImportedEvidenceSe
   }
 
   if (pkg.moduleId === "virtual-memory") {
-    const params = latestParams(pkg.runs, "virtual-memory");
+    const params = selectedParams(pkg, "virtual-memory");
     if (typeof params?.isolateAnalytics !== "boolean") {
       throw new Error("The memory package does not contain a supported saved control run.");
     }
@@ -48,7 +58,7 @@ export function parseIntegratedEvidencePackage(text: string): ImportedEvidenceSe
   }
 
   if (pkg.moduleId === "crash-consistency") {
-    const params = latestParams(pkg.runs, "io-benchmark");
+    const params = selectedParams(pkg, "io-benchmark");
     const pattern = params?.pattern;
     if (typeof pattern !== "string" || !IO_PATTERNS.includes(pattern as never)) {
       throw new Error("The crash-consistency package does not contain a supported I/O policy run.");
@@ -57,8 +67,11 @@ export function parseIntegratedEvidencePackage(text: string): ImportedEvidenceSe
   }
 
   if (pkg.moduleId === "virtualization-and-isolation") {
-    const params = latestParams(pkg.runs, "virtualization-isolation");
-    const boundary = params?.boundary;
+    const params = selectedParams(pkg, "virtualization-isolation");
+    const rawBoundary = params?.boundary;
+    const boundary = rawBoundary === "container-unbounded" || rawBoundary === "container-limited"
+      ? "container"
+      : rawBoundary;
     if (typeof boundary !== "string" || !BOUNDARY_TYPES.includes(boundary as never)) {
       throw new Error("The isolation package does not contain a supported saved boundary run.");
     }

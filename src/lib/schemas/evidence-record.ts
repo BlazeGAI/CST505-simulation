@@ -57,7 +57,7 @@ export const EVIDENCE_RECORD_FIELDS: {
     key: "directObservation",
     label: "Live or supplied observation",
     helpText:
-      "Summarize only what the approved live-system or instructor-provided evidence directly showed. For Week 5, state that no parallel live observation is required.",
+      "Summarize only what the approved live-system or instructor-provided evidence directly showed.",
   },
   {
     key: "modelAndAssumptions",

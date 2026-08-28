@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { runSimulation } from "./engine";
-import { schedulingPolicyModule, ASSESSED_SEED } from "./scheduling-policy";
+import { schedulingPolicyModule, ASSESSED_SEED, type Policy } from "./scheduling-policy";
 
-function run(policy: "fifo" | "round-robin" | "fair-share", timeQuantum = 4) {
+function run(policy: Policy, timeQuantum = 4) {
   return runSimulation(schedulingPolicyModule, { policy, timeQuantum }, ASSESSED_SEED);
 }
 
@@ -47,8 +47,17 @@ describe("schedulingPolicyModule golden seed (assessed seed 100)", () => {
     expect(result.metrics.deadlineMisses).toBeLessThan(fifo.deadlineMisses);
   });
 
+  it("SJF/STCF chooses the shortest remaining job and preempts when a shorter job becomes ready", () => {
+    const result = run("sjf-stcf");
+    const preemptions = result.trace.filter(
+      (event) => event.meta?.event === "preempt" && event.meta?.reason === "shorter remaining job became ready",
+    );
+    expect(preemptions.length).toBeGreaterThan(0);
+    expect(result.metrics.avgTurnaroundTime).toBeLessThan(run("fifo").metrics.avgTurnaroundTime);
+  });
+
   it("every job in every policy eventually completes with its full burst serviced", () => {
-    for (const policy of ["fifo", "round-robin", "fair-share"] as const) {
+    for (const policy of ["fifo", "sjf-stcf", "round-robin", "fair-share"] as const) {
       const result = run(policy);
       expect(result.metrics.completedJobs).toBe(result.metrics.totalJobs);
     }

@@ -6,8 +6,12 @@ import {
   virtualizationIsolationModule,
   BOUNDARY_TYPES,
   BOUNDARY_LABELS,
+  RESTRICTION_TYPES,
+  RESTRICTION_LABELS,
   ASSESSED_SEED,
   type BoundaryType,
+  type RestrictionType,
+  type VirtualizationIsolationParams,
 } from "@/lib/sim/virtualization-isolation";
 import { analyzeVirtualizability, POPEK_GOLDBERG_INSTRUCTIONS } from "@/lib/sim/popek-goldberg-example";
 import { createScenarioConfig, type ScenarioConfig } from "@/lib/schemas/scenario-config";
@@ -28,19 +32,22 @@ interface StoredRun {
   result: RunResult;
 }
 
-function runBoundary(boundary: BoundaryType): StoredRun {
-  const result = runSimulation(virtualizationIsolationModule, { boundary }, ASSESSED_SEED);
+function runBoundary(params: VirtualizationIsolationParams): StoredRun {
+  const result = runSimulation(virtualizationIsolationModule, params, ASSESSED_SEED);
   const config = createScenarioConfig({
     moduleId: MODULE_ID,
-    scenarioId: boundary,
+    scenarioId: params.boundary,
     seed: ASSESSED_SEED,
-    params: { boundary },
+    params,
   });
   return { config, result };
 }
 
 export function VirtualizationAndIsolationClient() {
   const [boundary, setBoundary] = useState<BoundaryType>("process");
+  const [cpuControlEnabled, setCpuControlEnabled] = useState(false);
+  const [memoryControlEnabled, setMemoryControlEnabled] = useState(false);
+  const [restriction, setRestriction] = useState<RestrictionType>("none");
 
   const runsDraft = useLocalDraft<StoredRun[]>(draftKey(MODULE_ID, "assessed", "runs"), []);
   const evidenceDraft = useLocalDraft(
@@ -51,7 +58,23 @@ export function VirtualizationAndIsolationClient() {
   const virtualizability = analyzeVirtualizability();
 
   function handleRun() {
-    runsDraft.setValue([runBoundary(boundary), ...runsDraft.value].slice(0, MAX_RUNS));
+    runsDraft.setValue([
+      runBoundary({ boundary, cpuControlEnabled, memoryControlEnabled, restriction }),
+      ...runsDraft.value,
+    ].slice(0, MAX_RUNS));
+  }
+
+  function restoreControlBaseline() {
+    setCpuControlEnabled(false);
+    setMemoryControlEnabled(false);
+    setRestriction("none");
+  }
+
+  function boundaryLabel(value: unknown): string {
+    if (value === "container-unbounded" || value === "container-limited") return "Container (legacy run)";
+    return typeof value === "string" && value in BOUNDARY_LABELS
+      ? BOUNDARY_LABELS[value as BoundaryType]
+      : "Unknown boundary";
   }
 
   function renderTrace(run: StoredRun) {
@@ -169,8 +192,9 @@ export function VirtualizationAndIsolationClient() {
           3. Configure and run
         </h2>
         <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
-          Seed <strong>{ASSESSED_SEED}</strong> and the shared workload are fixed &mdash; only the
-          isolation boundary changes between runs.
+          Seed <strong>{ASSESSED_SEED}</strong> and the shared workload are fixed. First compare the
+          process, container, and VM baselines. Then restore the control baseline before testing CPU,
+          memory, and any assigned network/storage restriction one at a time.
         </p>
         <form
           className="print:hidden mt-3 flex flex-wrap items-end gap-4"
@@ -196,11 +220,71 @@ export function VirtualizationAndIsolationClient() {
               ))}
             </select>
           </div>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={cpuControlEnabled}
+              onChange={(event) => setCpuControlEnabled(event.target.checked)}
+            />
+            CPU cap (30% noisy-tenant ceiling)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={memoryControlEnabled}
+              onChange={(event) => setMemoryControlEnabled(event.target.checked)}
+            />
+            Memory limit
+          </label>
+          <div>
+            <label htmlFor="vi-restriction" className="block text-sm font-medium">
+              Network/storage restriction
+            </label>
+            <select
+              id="vi-restriction"
+              value={restriction}
+              onChange={(event) => setRestriction(event.target.value as RestrictionType)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            >
+              {RESTRICTION_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {RESTRICTION_LABELS[value]}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             type="submit"
             className="rounded-md bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800"
           >
             Run simulation
+          </button>
+          <button
+            type="button"
+            onClick={restoreControlBaseline}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Restore control baseline
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              restoreControlBaseline();
+              setCpuControlEnabled(true);
+            }}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Apply CPU only
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              restoreControlBaseline();
+              setMemoryControlEnabled(true);
+            }}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Apply memory only
           </button>
           {runsDraft.value.length > 0 && (
             <button
@@ -220,8 +304,8 @@ export function VirtualizationAndIsolationClient() {
         </h2>
         {runsDraft.value.length === 0 ? (
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            No runs yet. Try all four boundaries at their default settings, then compare CPU
-            starvation and fault containment.
+            No runs yet. Try all three boundaries at baseline, then test the CPU cap, memory limit,
+            and an assigned network or storage restriction separately.
           </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
@@ -233,7 +317,9 @@ export function VirtualizationAndIsolationClient() {
                 <tr className="border-b border-slate-300 text-left dark:border-slate-700">
                   <th scope="col" className="py-2 pr-4">Boundary</th>
                   <th scope="col" className="py-2 pr-4">CPU starvation ticks</th>
-                  <th scope="col" className="py-2 pr-4">Memory cap enforced</th>
+                  <th scope="col" className="py-2 pr-4">CPU control</th>
+                  <th scope="col" className="py-2 pr-4">Memory control</th>
+                  <th scope="col" className="py-2 pr-4">Restriction result</th>
                   <th scope="col" className="py-2 pr-4">Kernel fault contained</th>
                   <th scope="col" className="py-2 pr-4">Overhead</th>
                   <th scope="col" className="py-2 pr-4">Boot latency</th>
@@ -242,11 +328,21 @@ export function VirtualizationAndIsolationClient() {
               <tbody>
                 {runsDraft.value.map((run, i) => (
                   <tr key={i} className="border-b border-slate-200 dark:border-slate-800">
-                    <td className="py-2 pr-4">{BOUNDARY_LABELS[run.config.params.boundary as BoundaryType]}</td>
+                    <td className="py-2 pr-4">{boundaryLabel(run.config.params.boundary)}</td>
                     <td className="py-2 pr-4">
                       {run.result.metrics.cpuStarvationTicks} / {run.result.metrics.totalTicks}
                     </td>
-                    <td className="py-2 pr-4">{run.result.metrics.memoryCapEnforced ? "Yes" : "No"}</td>
+                    <td className="py-2 pr-4">{run.result.metrics.cpuControlEnabled ? "On" : "Off"}</td>
+                    <td className="py-2 pr-4">
+                      {run.result.metrics.memoryControlEnabled ? "On; 0 breaches" : `${run.result.metrics.memoryLimitBreaches ?? "—"} breaches`}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {run.result.metrics.networkPacketsDropped
+                        ? `${run.result.metrics.networkPacketsDropped} packets blocked`
+                        : run.result.metrics.storageOpsThrottled
+                          ? `${run.result.metrics.storageOpsThrottled} I/O ops throttled`
+                          : "None"}
+                    </td>
                     <td className="py-2 pr-4">{run.result.metrics.faultContained ? "Yes" : "No"}</td>
                     <td className="py-2 pr-4">{run.result.metrics.overheadPercent}%</td>
                     <td className="py-2 pr-4">{run.result.metrics.bootLatencyMs}ms</td>
@@ -261,7 +357,7 @@ export function VirtualizationAndIsolationClient() {
           <details key={i} className="mt-3 rounded-md border border-slate-200 p-3 dark:border-slate-800">
             <summary className="cursor-pointer text-sm font-medium">
               Trace for run #{runsDraft.value.length - i}:{" "}
-              {BOUNDARY_LABELS[run.config.params.boundary as BoundaryType]}
+              {boundaryLabel(run.config.params.boundary)}
             </summary>
             {renderTrace(run)}
           </details>

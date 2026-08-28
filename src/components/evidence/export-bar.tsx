@@ -3,14 +3,18 @@
 import { exportPackageToJson } from "@/lib/export/json";
 import { exportPackageToCsv } from "@/lib/export/csv";
 import { downloadTextFile } from "@/lib/export/download";
-import { ExportPackageSchema, type ExportPackage } from "@/lib/schemas/export-package";
+import {
+  CurrentExportPackageSchema,
+  type CurrentExportPackage,
+} from "@/lib/schemas/export-package";
+import { SCHEMA_VERSIONS } from "@/lib/schemas/version";
 
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
 
 interface ExportBarProps {
   moduleId: string;
   moduleTitle: string;
-  buildPackage: () => Omit<ExportPackage, "schemaVersion" | "appVersion" | "exportedAt">;
+  buildPackage: () => Omit<CurrentExportPackage, "schemaVersion" | "appVersion" | "exportedAt">;
 }
 
 /**
@@ -21,9 +25,9 @@ interface ExportBarProps {
  * or metric shapes.
  */
 export function ExportBar({ moduleId, moduleTitle, buildPackage }: ExportBarProps) {
-  function toPackage(): ExportPackage {
-    return ExportPackageSchema.parse({
-      schemaVersion: 1,
+  function toPackage(): CurrentExportPackage {
+    return CurrentExportPackageSchema.parse({
+      schemaVersion: SCHEMA_VERSIONS.exportPackage,
       appVersion: APP_VERSION,
       exportedAt: new Date().toISOString(),
       ...buildPackage(),

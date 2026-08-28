@@ -48,3 +48,10 @@ Modules 1-5 are independent of each other and can ship in any order once the fou
 Module 6 (Integrated Failure Investigation) depends on the policy/parameter shapes
 established by modules 2-5 (scheduling policy, memory controls, acknowledgment/recovery policy,
 isolation limits), since its compound incident takes those as inputs — it should ship last.
+
+The implemented Week 2 scheduling contract includes FIFO/FCFS, SJF/STCF, round robin, and the
+supplemental fair-share policy. A version 2 Week 2 export records which completed policy run the
+student selected for integration. Week 6 accepts and evaluates all four choices without coercion;
+it still accepts older version 1 exports using their historical run-order convention. Week 5 keeps
+process/container/VM boundaries separate from independently switchable CPU, memory, network, and
+storage controls.

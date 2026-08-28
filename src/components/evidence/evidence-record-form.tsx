@@ -38,13 +38,17 @@ export function EvidenceRecordForm({ value, onChange }: EvidenceRecordFormProps)
       {EVIDENCE_RECORD_FIELDS.map((field) => {
         const inputId = `ser-${field.key}`;
         const helpId = `${inputId}-help`;
+        const helpText =
+          field.key === "directObservation" && value.moduleId === "virtualization-and-isolation"
+            ? "No parallel live observation is required for Week 5. State that this controlled simulation is the primary applied environment."
+            : field.helpText;
         return (
           <div key={field.key}>
             <label htmlFor={inputId} className="block text-sm font-medium">
               {field.label}
             </label>
             <p id={helpId} className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {field.helpText}
+              {helpText}
             </p>
             <textarea
               id={inputId}

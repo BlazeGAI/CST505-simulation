@@ -9,5 +9,5 @@ export const SCHEMA_VERSIONS = {
   scenarioConfig: 1,
   runResult: 1,
   evidenceRecord: 1,
-  exportPackage: 1,
+  exportPackage: 2,
 } as const;

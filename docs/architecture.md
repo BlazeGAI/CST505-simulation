@@ -68,6 +68,8 @@ Four Zod schemas in `src/lib/schemas/` form the model:
   as a non-identifying evidence-package label for backward compatibility.
 - **`ExportPackage`** (`export-package.ts`) — what a student actually exports: every kept run
   (`{ config, result }` pairs) plus one evidence record, stamped with `exportedAt` and `appVersion`.
+  Version 2 can also identify an explicit `selectedRun`, so an integrated module imports the
+  student's chosen policy rather than guessing from run order.
 
 A student can keep multiple runs (to compare parameters or seeds) against one evidence record per
 scenario, matching the brief's "run and compare deterministic simulations" requirement.
@@ -101,13 +103,12 @@ demo, and every module PR is expected to add the same kind of test for its own s
 
 Every persisted or exported document embeds a `schemaVersion` integer, defined once in
 `src/lib/schemas/version.ts` (`SCHEMA_VERSIONS`). Zod schemas use `z.literal(SCHEMA_VERSIONS.x)` for
-that field, so parsing a mismatched version fails loudly instead of silently misreading an old
-draft or an old export. Because the version lives inside the data (not just in a filename or a
-release tag), a stored draft from an earlier release can be detected on load and migrated
-explicitly (a version-1-to-2 migration function, added when a schema actually changes) rather than
-guessed at. The foundation ships every schema at version 1; each module PR that needs a shape the
-generic envelope doesn't cover extends its own `paramsSchema`/`resultSchema` rather than changing
-the shared envelope.
+that field, so parsing an unknown version fails loudly instead of silently misreading an old draft
+or export. Because the version lives inside the data (not just in a filename or release tag), an
+older record can be migrated explicitly rather than guessed at. Export-package version 2 adds an
+optional explicit selected-run reference; the importer continues accepting version 1 packages and
+preserves their historical newest-matching-run behavior. Module-specific parameter shapes remain
+inside each module's own `paramsSchema`/`resultSchema`.
 
 ### 7. What are the required exports, and how are they produced?
 
