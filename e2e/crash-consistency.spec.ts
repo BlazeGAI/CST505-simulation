@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Crash Consistency module", () => {
   test("crashing after W4 loses the write; crashing after W5 recovers it via lost+found", async ({ page }) => {
     await page.goto("/modules/crash-consistency");
-    await expect(page.getByRole("heading", { name: "Crash Consistency" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "File-System and Crash-Consistency Investigation" })).toBeVisible();
 
     const crashForm = page.locator("form").filter({ has: page.getByLabel("Crash point") });
     await crashForm.getByLabel("Crash point").selectOption("w4");

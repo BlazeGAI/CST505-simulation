@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Virtual Memory module", () => {
   test("the manual-calculation table shows Belady's anomaly before any simulation is run", async ({ page }) => {
     await page.goto("/modules/virtual-memory");
-    await expect(page.getByRole("heading", { name: "Virtual Memory" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Memory Behavior and Virtual-Memory Investigation" })).toBeVisible();
 
     const manualTable = page.getByRole("region", { name: /Manual calculation/ }).getByRole("table");
     const rows = manualTable.locator("tbody tr");

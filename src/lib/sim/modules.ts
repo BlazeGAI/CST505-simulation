@@ -10,6 +10,7 @@ export type ModuleStatus = "planned" | "in-development" | "available";
 export interface ModuleSummary {
   slug: string;
   weekLabel: string;
+  activityLabel: string;
   title: string;
   clo: string[];
   summary: string;
@@ -21,7 +22,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "system-call-contracts",
     weekLabel: "Week 1",
-    title: "System-Call Contracts",
+    activityLabel: "Activity 1.3",
+    title: "System Boundaries Investigation",
     clo: ["CLO 4"],
     summary:
       "Trace a small HarborLink sensor-ingestion program across the user-kernel boundary in normal and controlled-failure runs, and locate the first divergence between them.",
@@ -35,7 +37,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "scheduling-and-concurrency",
     weekLabel: "Week 2",
-    title: "Scheduling and Concurrency",
+    activityLabel: "Activity 2.2",
+    title: "Processes, Scheduling, and Concurrency Investigation",
     clo: ["CLO 1"],
     summary:
       "Compare FIFO, round robin, and a fair-share policy against a shared HarborLink workload, then reproduce and correct an unsafe shared-buffer interleaving.",
@@ -49,7 +52,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "virtual-memory",
     weekLabel: "Week 3",
-    title: "Virtual Memory",
+    activityLabel: "Activity 3.2",
+    title: "Memory Behavior and Virtual-Memory Investigation",
     clo: ["CLO 2"],
     summary:
       "Compare FIFO, LRU, and Clock replacement across frame allocations and workload phases to locate a working-set transition and evaluate a memory control.",
@@ -63,7 +67,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "crash-consistency",
     weekLabel: "Week 4",
-    title: "Crash Consistency",
+    activityLabel: "Activity 4.2",
+    title: "File-System and Crash-Consistency Investigation",
     clo: ["CLO 3"],
     summary:
       "Interrupt a create-and-append operation at controlled write boundaries, classify the resulting inconsistencies, and apply a simplified fsck-style recovery pass.",
@@ -77,7 +82,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "virtualization-and-isolation",
     weekLabel: "Week 5",
-    title: "Virtualization and Isolation",
+    activityLabel: "Activity 5.2",
+    title: "Virtualization and Isolation Investigation",
     clo: ["CLO 4"],
     summary:
       "Classify privileged and sensitive operations against the Popek-Goldberg requirements, then compare process, container, and VM boundaries under one workload.",
@@ -91,7 +97,8 @@ export const MODULES: ModuleSummary[] = [
   {
     slug: "integrated-failure-analysis",
     weekLabel: "Week 6",
-    title: "Integrated Operating-System Failure Analysis",
+    activityLabel: "Activity 6.2",
+    title: "Integrated Failure Investigation",
     clo: ["CLO 1", "CLO 2", "CLO 3", "CLO 4"],
     summary:
       "Load Week 2-5 policy choices into a deterministic compound-incident timeline and trace the first failed constraint across subsystems, with and without mitigation.",

@@ -25,9 +25,10 @@ import { useLocalDraft } from "@/lib/storage/use-local-draft";
 import { draftKey } from "@/lib/storage/local-draft-store";
 import { EvidenceRecordForm } from "@/components/evidence/evidence-record-form";
 import { ExportBar } from "@/components/evidence/export-bar";
+import { CourseEvidenceContext } from "@/components/modules/course-evidence-context";
 
 const MODULE_ID = "crash-consistency";
-const MODULE_TITLE = "Crash Consistency";
+const MODULE_TITLE = "File-System and Crash-Consistency Investigation";
 const MAX_RUNS = 8;
 
 interface StoredRun {
@@ -185,7 +186,7 @@ export function CrashConsistencyClient() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-sm text-slate-500 dark:text-slate-400">Week 4 &middot; CLO 3</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Week 4 &middot; Activity 4.2 &middot; CLO 3</p>
       <h1 className="mt-1 text-2xl font-bold tracking-tight">{MODULE_TITLE}</h1>
       <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">
         A minimal on-disk file system executes a fixed, ordered create-and-append sequence for a
@@ -194,6 +195,7 @@ export function CrashConsistencyClient() {
         pass then reports what it could repair, what it lost, and what it could only leave
         ambiguous.
       </p>
+      <CourseEvidenceContext moduleId={MODULE_ID} />
 
       <section className="mt-8" aria-labelledby="predict-heading">
         <h2 id="predict-heading" className="text-lg font-semibold">

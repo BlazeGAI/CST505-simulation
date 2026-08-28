@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Virtualization and Isolation module", () => {
   test("the manual-calculation table flags the one sensitive-but-unprivileged instruction", async ({ page }) => {
     await page.goto("/modules/virtualization-and-isolation");
-    await expect(page.getByRole("heading", { name: "Virtualization and Isolation" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Virtualization and Isolation Investigation" })).toBeVisible();
 
     const manualTable = page.getByRole("region", { name: /Manual calculation/ }).getByRole("table");
     const rows = manualTable.locator("tbody tr");

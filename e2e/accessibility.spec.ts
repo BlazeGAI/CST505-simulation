@@ -61,7 +61,7 @@ test("the Integrated Failure Analysis page's run workflow is reachable by keyboa
   await page.keyboard.press("Tab"); // Run simulation button
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeFocused();
   await page.keyboard.press("Enter");
-  const resultsTable = page.getByRole("region", { name: "3. Compare results" }).getByRole("table");
+  const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
   await expect(resultsTable.locator("tbody tr")).toHaveCount(1);
 });
 

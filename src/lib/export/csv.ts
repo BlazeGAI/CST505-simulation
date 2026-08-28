@@ -41,7 +41,7 @@ export function exportPackageToCsv(pkg: ExportPackage): string {
 
   lines.push("");
   lines.push(csvRow(["field", "value"]));
-  lines.push(csvRow(["preparedBy", pkg.evidenceRecord.preparedBy]));
+  lines.push(csvRow(["Evidence package label", pkg.evidenceRecord.preparedBy]));
   for (const field of EVIDENCE_RECORD_FIELDS) {
     lines.push(csvRow([field.label, pkg.evidenceRecord[field.key]]));
   }

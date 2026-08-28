@@ -21,9 +21,10 @@ import { useLocalDraft } from "@/lib/storage/use-local-draft";
 import { draftKey } from "@/lib/storage/local-draft-store";
 import { EvidenceRecordForm } from "@/components/evidence/evidence-record-form";
 import { ExportBar } from "@/components/evidence/export-bar";
+import { CourseEvidenceContext } from "@/components/modules/course-evidence-context";
 
 const MODULE_ID = "scheduling-and-concurrency";
-const MODULE_TITLE = "Scheduling and Concurrency";
+const MODULE_TITLE = "Processes, Scheduling, and Concurrency Investigation";
 const MAX_RUNS = 8;
 
 interface StoredRun {
@@ -151,13 +152,14 @@ export function SchedulingAndConcurrencyClient() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-sm text-slate-500 dark:text-slate-400">Week 2 &middot; CLO 1</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Week 2 &middot; Activity 2.2 &middot; CLO 1</p>
       <h1 className="mt-1 text-2xl font-bold tracking-tight">{MODULE_TITLE}</h1>
       <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">
         Two related, deterministic simulations: a scheduling-policy comparison across five
         HarborLink workload classes, and a controlled shared-buffer interleaving that shows a
         correct scheduling policy can still produce an incorrect result when synchronization fails.
       </p>
+      <CourseEvidenceContext moduleId={MODULE_ID} />
 
       <section className="mt-8" aria-labelledby="predict-heading">
         <h2 id="predict-heading" className="text-lg font-semibold">

@@ -1,15 +1,61 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Integrated Failure Analysis module", () => {
+  test("imports and validates a Simulation 2 JSON evidence package", async ({ page }) => {
+    await page.goto("/modules/integrated-failure-analysis");
+    const pkg = {
+      schemaVersion: 1,
+      appVersion: "0.2.0",
+      exportedAt: "2026-08-28T00:00:00.000Z",
+      moduleId: "scheduling-and-concurrency",
+      moduleTitle: "Processes, Scheduling, and Concurrency Investigation",
+      runs: [{
+        config: {
+          schemaVersion: 1,
+          moduleId: "scheduling-policy",
+          scenarioId: "round-robin",
+          scenarioVersion: "1.0.0",
+          engineVersion: "1.0.0",
+          seed: 505,
+          params: { policy: "round-robin", timeQuantum: 4 },
+        },
+        result: {
+          schemaVersion: 1,
+          moduleId: "scheduling-policy",
+          scenarioId: "round-robin",
+          seed: 505,
+          metrics: {},
+          trace: [],
+        },
+      }],
+      evidenceRecord: {
+        schemaVersion: 1,
+        moduleId: "scheduling-and-concurrency",
+        scenarioId: "assessed",
+        seed: 505,
+        updatedAt: "2026-08-28T00:00:00.000Z",
+      },
+    };
+
+    await page.getByLabel("JSON evidence packages from Simulations 2-5").setInputFiles({
+      name: "simulation-2.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(pkg)),
+    });
+
+    await expect(page.getByRole("status")).toContainText("Loaded 1 package");
+    await expect(page.getByLabel("Scheduling policy")).toHaveValue("round-robin");
+  });
+
   test("the default (weakest-policy) configuration fails at the very first stage: scheduling", async ({ page }) => {
     await page.goto("/modules/integrated-failure-analysis");
     await expect(
-      page.getByRole("heading", { name: "Integrated Operating-System Failure Analysis" }),
+      page.getByRole("heading", { name: "Integrated Failure Investigation" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Run simulation" }).click();
 
-    const resultsTable = page.getByRole("region", { name: "3. Compare results" }).getByRole("table");
+    const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
     const row = resultsTable.locator("tbody tr").first();
     await expect(row).toContainText("Scheduling");
     await expect(row.locator("td").last()).toHaveText("0 / 4");
@@ -22,7 +68,7 @@ test.describe("Integrated Failure Analysis module", () => {
     await page.getByRole("button", { name: "Apply fully mitigated policies" }).click();
     await page.getByRole("button", { name: "Run simulation" }).click();
 
-    const resultsTable = page.getByRole("region", { name: "3. Compare results" }).getByRole("table");
+    const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
     const rows = resultsTable.locator("tbody tr");
     await expect(rows).toHaveCount(2);
 
@@ -38,7 +84,7 @@ test.describe("Integrated Failure Analysis module", () => {
     await page.getByLabel("Scheduling policy").selectOption("fair-share");
     await page.getByRole("button", { name: "Run simulation" }).click();
 
-    const resultsTable = page.getByRole("region", { name: "3. Compare results" }).getByRole("table");
+    const resultsTable = page.getByRole("region", { name: "4. Compare results" }).getByRole("table");
     const rows = resultsTable.locator("tbody tr");
     await expect(rows.nth(0)).toContainText("Memory");
     await expect(rows.nth(1)).toContainText("Scheduling");

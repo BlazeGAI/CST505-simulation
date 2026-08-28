@@ -8,7 +8,7 @@ interface EvidenceRecordFormProps {
 }
 
 /**
- * Renders the eight-field Simulation Evidence Record every module reuses.
+ * Renders the revised Simulation Evidence Record every module reuses.
  * Every module PR wires this same component to its own scenario/seed
  * instead of re-implementing the form.
  */
@@ -21,9 +21,9 @@ export function EvidenceRecordForm({ value, onChange }: EvidenceRecordFormProps)
     <div className="space-y-5">
       <div>
         <label htmlFor="ser-prepared-by" className="block text-sm font-medium">
-          Prepared by{" "}
+          Evidence package label{" "}
           <span className="text-slate-500 dark:text-slate-400">
-            (optional, stays in this browser)
+            (optional, stays in this browser; do not enter personal information)
           </span>
         </label>
         <input
@@ -49,7 +49,7 @@ export function EvidenceRecordForm({ value, onChange }: EvidenceRecordFormProps)
             <textarea
               id={inputId}
               aria-describedby={helpId}
-              value={value[field.key]}
+              value={value[field.key] ?? ""}
               onChange={(e) => setField(field.key, e.target.value)}
               rows={3}
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"

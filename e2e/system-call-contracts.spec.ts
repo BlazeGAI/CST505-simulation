@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("System-Call Contracts module", () => {
   test("run normal and a failure scenario, compare, and export JSON", async ({ page }) => {
     await page.goto("/modules/system-call-contracts");
-    await expect(page.getByRole("heading", { name: "System-Call Contracts" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "System Boundaries Investigation" })).toBeVisible();
 
     // Run the normal scenario, then the denied-write failure scenario.
     await page.getByRole("button", { name: "Run simulation" }).click();
@@ -22,7 +22,7 @@ test.describe("System-Call Contracts module", () => {
 
     await page.getByLabel("Prediction").fill("The alert-log openat should fail with EACCES.");
     await page
-      .getByLabel("Observed results")
+      .getByLabel("Simulated results")
       .fill("openat on alert.log returned -1 EACCES; the program exited 74.");
 
     const downloadPromise = page.waitForEvent("download");
@@ -39,7 +39,7 @@ test.describe("System-Call Contracts module", () => {
 
     const processCells = runDetails.getByRole("cell", { name: "process", exact: true });
     await expect(processCells.first()).toBeVisible();
-    await page.getByLabel("Process").uncheck();
+    await page.getByRole("checkbox", { name: "Process", exact: true }).uncheck();
     await expect(processCells).toHaveCount(0);
   });
 

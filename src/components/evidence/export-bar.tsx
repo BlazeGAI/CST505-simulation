@@ -3,9 +3,9 @@
 import { exportPackageToJson } from "@/lib/export/json";
 import { exportPackageToCsv } from "@/lib/export/csv";
 import { downloadTextFile } from "@/lib/export/download";
-import type { ExportPackage } from "@/lib/schemas/export-package";
+import { ExportPackageSchema, type ExportPackage } from "@/lib/schemas/export-package";
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.2.0";
 
 interface ExportBarProps {
   moduleId: string;
@@ -22,12 +22,12 @@ interface ExportBarProps {
  */
 export function ExportBar({ moduleId, moduleTitle, buildPackage }: ExportBarProps) {
   function toPackage(): ExportPackage {
-    return {
+    return ExportPackageSchema.parse({
       schemaVersion: 1,
       appVersion: APP_VERSION,
       exportedAt: new Date().toISOString(),
       ...buildPackage(),
-    };
+    });
   }
 
   function handleDownloadJson() {

@@ -3,18 +3,16 @@
 Six deterministic, browser-based operating-system simulation modules for **CST505: Advanced
 Operating Systems Theory**, built as one Next.js application with no accounts, no server-side
 database, and no student-data collection. See [`docs/architecture.md`](docs/architecture.md) for
-the full design record and [`docs/roadmap.md`](docs/roadmap.md) for what ships in this foundation
-versus each module's own pull request.
+the full design record and [`docs/roadmap.md`](docs/roadmap.md) for the module/activity map.
 
 ## What's here right now
 
-This is the **foundation**: the application shell, navigation, the seeded simulation-engine
-contract every module implements, versioned scenario/export schemas, the Simulation Evidence
-Record, local draft storage, JSON/CSV/print-report export, the accessibility approach, and the
-testing setup — proven end to end by a small non-graded reference simulation at `/demo`. The six
-graded modules (system-call contracts, scheduling and concurrency, virtual memory, crash
-consistency, virtualization and isolation, and integrated failure analysis) ship in their own
-follow-up pull requests; today their routes are placeholders describing what's coming.
+The application includes all six graded investigations, deterministic engines and golden-seed
+tests, the shared Simulation Evidence Record, local draft storage, JSON/CSV/print-report export,
+and keyboard/accessibility checks. Course-facing labels match the revised design document:
+Activities 1.3, 2.2, 3.2, 4.2, 5.2, and 6.2. The interface explicitly separates live or supplied
+observation, simulated evidence, textbook interpretation, assumptions, unresolved questions, and
+production limitations. Activity 6.2 validates and imports JSON packages from Simulations 2-5.
 
 ## Getting started
 

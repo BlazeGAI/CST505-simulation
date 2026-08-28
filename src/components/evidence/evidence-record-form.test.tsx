@@ -13,14 +13,17 @@ describe("EvidenceRecordForm", () => {
     render(<EvidenceRecordForm value={value} onChange={() => {}} />);
 
     for (const label of [
-      "Prepared by",
+      "Evidence package label",
+      "Live or supplied observation",
       "Model and assumptions",
       "Prediction",
       "Parameters tested",
-      "Observed results",
+      "Simulated results",
+      "Evidence-source comparison",
       "Cited interpretation",
       "Architecture implication",
       "Counterexample or complication",
+      "Unresolved question",
       "Limitation",
     ]) {
       expect(screen.getByLabelText(new RegExp(label))).toBeInTheDocument();

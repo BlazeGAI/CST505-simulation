@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 const HIGHLIGHTS = [
   { label: "Deterministic", detail: "Every run is seeded, so results are exactly reproducible." },
   { label: "Runs in your browser", detail: "No server, no accounts, no install." },
-  { label: "Six modules", detail: "One per week, each with its own evidence and export." },
+  { label: "Six investigations", detail: "One per week, aligned to the revised course activities." },
 ];
 
 export default function Home() {
@@ -20,10 +20,11 @@ export default function Home() {
         </h1>
         <p className="mt-5 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
           Six deterministic, browser-based simulations for HarborLink, the course&apos;s fictional
-          resource-constrained edge platform. Each module follows the same cycle: predict, configure
-          a controlled scenario, run and compare deterministic simulations, inspect accessible
-          traces and metrics, complete a Simulation Evidence Record, and export the result as JSON,
-          CSV, or a print-ready report.
+          resource-constrained edge platform. Each investigation connects textbook theory with a
+          live or instructor-supplied observation when the activity requires one, then uses a
+          controlled simulation for repeatable comparison. Keep direct observation, simulated
+          evidence, theoretical interpretation, assumptions, and production limitations clearly
+          separated in the Simulation Evidence Record and exported evidence package.
         </p>
 
         <dl className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -66,7 +67,7 @@ export default function Home() {
                   {module.summary}
                 </p>
                 <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {module.weekLabel} &middot; {module.clo.join(", ")}
+                  {module.weekLabel} &middot; {module.activityLabel} &middot; {module.clo.join(", ")}
                 </p>
               </Link>
             </li>
@@ -75,9 +76,10 @@ export default function Home() {
       </section>
 
       <section className="mt-14 max-w-3xl rounded-lg border border-slate-200 p-5 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
-        These are instructional models, not live operating-system, container, or virtual-machine
-        environments. There are no accounts and no server-side database &mdash; drafts are saved
-        only in this browser until you export them.
+        These are controlled instructional models, not live operating-system, container, or
+        virtual-machine environments. Complete any assigned live-system or instructor-provided
+        observation separately, redact identifying details, and do not treat either evidence source
+        as a universal production guarantee. Drafts stay only in this browser until you export them.
       </section>
     </div>
   );

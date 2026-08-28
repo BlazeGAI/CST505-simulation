@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Scheduling and Concurrency module", () => {
   test("compare two scheduling policies and inspect the queue-state log", async ({ page }) => {
     await page.goto("/modules/scheduling-and-concurrency");
-    await expect(page.getByRole("heading", { name: "Scheduling and Concurrency" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Processes, Scheduling, and Concurrency Investigation" })).toBeVisible();
 
     const schedulingForm = page.locator("form").filter({ has: page.getByLabel("Policy") });
     await schedulingForm.getByRole("button", { name: "Run simulation" }).click();

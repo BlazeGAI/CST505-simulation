@@ -22,9 +22,14 @@ import { useLocalDraft } from "@/lib/storage/use-local-draft";
 import { draftKey } from "@/lib/storage/local-draft-store";
 import { EvidenceRecordForm } from "@/components/evidence/evidence-record-form";
 import { ExportBar } from "@/components/evidence/export-bar";
+import { CourseEvidenceContext } from "@/components/modules/course-evidence-context";
+import {
+  MAX_EVIDENCE_FILE_BYTES,
+  parseIntegratedEvidencePackage,
+} from "@/lib/import/integrated-evidence";
 
 const MODULE_ID = "integrated-failure-analysis";
-const MODULE_TITLE = "Integrated Operating-System Failure Analysis";
+const MODULE_TITLE = "Integrated Failure Investigation";
 const MAX_RUNS = 8;
 
 const SCHEDULING_POLICY_LABELS: Record<SchedulingPolicy, string> = {
@@ -62,6 +67,7 @@ export function IntegratedFailureAnalysisClient() {
   const [isolationBoundary, setIsolationBoundary] = useState<BoundaryType>(
     INTEGRATED_FAILURE_ANALYSIS_DEFAULT_PARAMS.isolationBoundary,
   );
+  const [importStatus, setImportStatus] = useState<{ kind: "success" | "error"; message: string }>();
 
   const runsDraft = useLocalDraft<StoredRun[]>(draftKey(MODULE_ID, "assessed", "runs"), []);
   const evidenceDraft = useLocalDraft(
@@ -84,6 +90,44 @@ export function IntegratedFailureAnalysisClient() {
     setMemoryControlEnabled(FULLY_MITIGATED_PARAMS.memoryControlEnabled);
     setDurabilityPolicy(FULLY_MITIGATED_PARAMS.durabilityPolicy);
     setIsolationBoundary(FULLY_MITIGATED_PARAMS.isolationBoundary);
+  }
+
+  async function handleEvidenceImport(files: FileList | null) {
+    if (!files?.length) return;
+    const next: IntegratedFailureAnalysisParams = {
+      schedulingPolicy,
+      memoryControlEnabled,
+      durabilityPolicy,
+      isolationBoundary,
+    };
+    const importedModules: string[] = [];
+    const errors: string[] = [];
+
+    for (const file of Array.from(files)) {
+      if (file.size > MAX_EVIDENCE_FILE_BYTES) {
+        errors.push(`${file.name}: file exceeds the 2 MB limit.`);
+        continue;
+      }
+      try {
+        const imported = parseIntegratedEvidencePackage(await file.text());
+        Object.assign(next, imported.selection);
+        importedModules.push(imported.moduleId);
+      } catch (error) {
+        errors.push(`${file.name}: ${error instanceof Error ? error.message : "Import failed."}`);
+      }
+    }
+
+    if (importedModules.length) {
+      setSchedulingPolicy(next.schedulingPolicy);
+      setMemoryControlEnabled(next.memoryControlEnabled);
+      setDurabilityPolicy(next.durabilityPolicy);
+      setIsolationBoundary(next.isolationBoundary);
+    }
+    setImportStatus(
+      errors.length
+        ? { kind: "error", message: `${importedModules.length} package(s) loaded. ${errors.join(" ")}` }
+        : { kind: "success", message: `Loaded ${importedModules.length} package(s) from Simulations 2-5.` },
+    );
   }
 
   function stageLabel(stageId: StageId) {
@@ -137,17 +181,50 @@ export function IntegratedFailureAnalysisClient() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-sm text-slate-500 dark:text-slate-400">Week 6 &middot; CLO 1, CLO 2, CLO 3, CLO 4</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Week 6 &middot; Activity 6.2 &middot; CLO 1, CLO 2, CLO 3, CLO 4</p>
       <h1 className="mt-1 text-2xl font-bold tracking-tight">{MODULE_TITLE}</h1>
       <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">
         One compound incident hits four HarborLink subsystems in a fixed order &mdash; scheduling,
         memory, durability, and isolation &mdash; each governed by the same policy you chose in
         Weeks 2 through 5. Find the first failed constraint, then fix it one subsystem at a time.
       </p>
+      <CourseEvidenceContext moduleId={MODULE_ID} />
+
+      <section className="mt-8" aria-labelledby="import-heading">
+        <h2 id="import-heading" className="text-lg font-semibold">1. Import prior evidence</h2>
+        <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+          Select valid JSON evidence packages exported from Simulations 2-5. The app validates the
+          schema and loads the latest supported scheduling, memory-control, durability, and
+          isolation selections. If earlier exports are unavailable, keep the instructor default
+          configuration shown below.
+        </p>
+        <label htmlFor="ifa-import" className="mt-3 block text-sm font-medium">
+          JSON evidence packages from Simulations 2-5
+        </label>
+        <input
+          id="ifa-import"
+          type="file"
+          accept="application/json,.json"
+          multiple
+          onChange={(event) => {
+            void handleEvidenceImport(event.target.files);
+            event.target.value = "";
+          }}
+          className="print:hidden mt-1 block w-full max-w-xl rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+        />
+        {importStatus && (
+          <p
+            className={`mt-2 text-sm ${importStatus.kind === "error" ? "text-red-700 dark:text-red-300" : "text-emerald-700 dark:text-emerald-300"}`}
+            role="status"
+          >
+            {importStatus.message}
+          </p>
+        )}
+      </section>
 
       <section className="mt-8" aria-labelledby="predict-heading">
         <h2 id="predict-heading" className="text-lg font-semibold">
-          1. Predict
+          2. Predict
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Before running, write in the evidence record below which of the four subsystems you
@@ -158,7 +235,7 @@ export function IntegratedFailureAnalysisClient() {
 
       <section className="mt-8" aria-labelledby="configure-heading">
         <h2 id="configure-heading" className="text-lg font-semibold">
-          2. Configure and run
+          3. Configure and run
         </h2>
         <p className="print:hidden mt-1 text-sm text-slate-600 dark:text-slate-300">
           Seed <strong>{ASSESSED_SEED}</strong> and the incident load at each stage are fixed
@@ -261,7 +338,7 @@ export function IntegratedFailureAnalysisClient() {
 
       <section className="mt-8" aria-labelledby="compare-heading">
         <h2 id="compare-heading" className="text-lg font-semibold">
-          3. Compare results
+          4. Compare results
         </h2>
         {runsDraft.value.length === 0 ? (
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -323,7 +400,7 @@ export function IntegratedFailureAnalysisClient() {
 
       <section className="mt-8" aria-labelledby="evidence-heading">
         <h2 id="evidence-heading" className="text-lg font-semibold">
-          4. Simulation Evidence Record
+          5. Integrated Simulation Evidence Record
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Saved automatically to this browser as you type.
@@ -340,7 +417,7 @@ export function IntegratedFailureAnalysisClient() {
 
       <section className="mt-8" aria-labelledby="export-heading">
         <h2 id="export-heading" className="text-lg font-semibold">
-          5. Export
+          6. Export
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Export the incident comparison, per-run timelines, and evidence record as JSON, as CSV,

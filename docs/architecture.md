@@ -61,10 +61,11 @@ Four Zod schemas in `src/lib/schemas/` form the model:
   number map, for comparison tables) and `trace` (an ordered list of inspectable events, for the
   annotated-trace requirement in the brief). Each module's real UI can render richer detail on top
   of this envelope.
-- **`EvidenceRecord`** (`evidence-record.ts`) — the eight reflective fields from the course design
-  document's Start Here overview: model and assumptions, prediction, parameters tested, observed
-  results, cited interpretation, architecture implication, counterexample or complication, and
-  limitation, plus an optional local-only `preparedBy` field for the printed report.
+- **`EvidenceRecord`** (`evidence-record.ts`) — the revised course evidence fields: live or supplied
+  observation, model and assumptions, prediction, parameters tested, simulated results,
+  evidence-source comparison, cited interpretation, architecture implication, counterexample or
+  complication, unresolved question, and limitation. The legacy `preparedBy` storage key is shown
+  as a non-identifying evidence-package label for backward compatibility.
 - **`ExportPackage`** (`export-package.ts`) — what a student actually exports: every kept run
   (`{ config, result }` pairs) plus one evidence record, stamped with `exportedAt` and `appVersion`.
 
